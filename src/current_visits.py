@@ -234,42 +234,27 @@ def current_planned(plate_tab,visit_tab,design_tab):
     #Write out table
     output_tab.write('plate_visits.csv',format='ascii')   
     
-    return(output_tab)
+    return(output_tab)       
 
-def temporal_stats(visti_tab,comb_tab):
-    return(0)       
-
-# -------------
-# Main Function
-# -------------
-def current_visits_main():
+def temporal_change(plate_tab,visit_tab,comb_tab):
     
-    plate_list = list()
-    mjd_list = list()
-    lst_list = list()
-    lst_listy1 = list()
-    lst_listy2 = list()
-    anc_list = list()
-    apok_list = list()
-    bulge_list = list()
-    clus_list = list()
-    disk_list = list()
-    halo_list = list()
-    goal_list = list()
-    sat_list = list()
-    sn2_list = list()
+    mjd_dict = dict()
     
-    #Read plates file
-    plate_tab = read_plates()
-    #Read visits file
-    visit_tab = read_visits()
-    #Read planned file
-    plan_tab = read_planned()
-    #Read design file
-    design_tab = read_design()
-    
-    comb_tab = current_planned(plate_tab,visit_tab,design_tab)
-    
+    mjd_dict['plate'] = list()
+    mjd_dict['mjd'] = list()
+    mjd_dict['lst'] = list()
+    mjd_dict['lsty1'] = list()
+    mjd_dict['lsty2'] = list()
+    mjd_dict['anc'] = list()
+    mjd_dict['apok'] = list()
+    mjd_dict['bulge'] = list()
+    mjd_dict['clus'] = list()
+    mjd_dict['disk'] = list()
+    mjd_dict['halo'] = list()
+    mjd_dict['goal'] = list()
+    mjd_dict['sat'] = list()
+    mjd_dict['sn2'] = list()
+        
     for visit in range(len(visit_tab)):
         #Determine whether the visit is good
         if (visit_tab['qlcount'][visit] < 2 and visit_tab['redcount'][visit] < 2): 
@@ -285,32 +270,32 @@ def current_visits_main():
                  or hold['current_survey_mode_pk'][0] == 1)):
             continue
             
-        plate_list.append(hold['plate_id'][0])
-        mjd_list.append(visit_tab['mjd'][visit])
+        mjd_dict['plate'].append(hold['plate_id'][0])
+        mjd_dict['mjd'].append(visit_tab['mjd'][visit])
         #Add S/N info
         if(visit_tab['redcount'][visit] >= 2):
             plate_sn2 = visit_tab['redsum'][visit]
         elif(visit_tab['qlcount'][visit] >=2):
             plate_sn2 = visit_tab['qlsum'][visit]
-        sn2_list.append(plate_sn2)      
+        mjd_dict['sn2'].append(plate_sn2)      
         
         #Determine type
         if (chold['type'] == 'anc'):
-            anc_list.append(visit_tab['mjd'][visit])
+            mjd_dict['anc'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'kep_apokasc'):
-            apok_list.append(visit_tab['mjd'][visit])    
+            mjd_dict['apok'].append(visit_tab['mjd'][visit])    
         if (chold['type'] == 'bulge' or chold['type'] =='rrlyr'):
-            bulge_list.append(visit_tab['mjd'][visit])
+            mjd_dict['bulge'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'cluster_oc' or chold['type'] == 'cluster_gc'):
-            clus_list.append(visit_tab['mjd'][visit])
+            mjd_dict['clus'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'disk' or chold['type'] == 'disk1' or chold['type'] == 'disk2'):
-            disk_list.append(visit_tab['mjd'][visit])
+            mjd_dict['disk'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'halo' or chold['type'] == 'halo_stream'):
-            halo_list.append(visit_tab['mjd'][visit])
+            mjd_dict['halo'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'k2' or chold['type'] == 'kep_koi' or chold['type'] == 'substellar' or chold['type'] == 'yso'):
-            goal_list.append(visit_tab['mjd'][visit])
+            mjd_dict['goal'].append(visit_tab['mjd'][visit])
         if (chold['type'] == 'halo_dsph'):
-            sat_list.append(visit_tab['mjd'][visit])   
+            mjd_dict['sat'].append(visit_tab['mjd'][visit])   
         
         #Deal with going arcross 360 / 0
         lst = (hold['center_ra'][0] + hold['hour_angle'][0])/15.0
@@ -318,26 +303,27 @@ def current_visits_main():
         if (lst > 24.0): lst = lst - 24
         if (lst < 0.0): lst = lst + 24
         
-        lst_list.append(lst)
+        mjd_dict['lst'].append(lst)
         if (visit_tab['mjd'][visit] < 57210):
-            lst_listy1.append(lst)
+            mjd_dict['lsty1'].append(lst)
         else:
-            lst_listy2.append(lst)
+            mjd_dict['lsty2'].append(lst)
     
     output_tab = Table()
      
-    output_tab['plate_id'] = plate_list 
-    output_tab['mjd'] = mjd_list 
-    output_tab['lst'] = lst_list 
+    output_tab['plate_id'] = mjd_dict['plate'] 
+    output_tab['mjd'] = mjd_dict['mjd'] 
+    output_tab['lst'] = mjd_dict['lst'] 
     
     #Write out table
     output_tab.write('visit_lst.csv',format='ascii')
+    return (output_tab,mjd_dict)
+
+def lst_plots(mjd_dict,startmjd,endmjd):
     
-    #Get the most recent data
-    smjd_list = sorted(mjd_list)
-    #startmjd = smjd_list[0]
-    startmjd = 56840
-    endmjd = smjd_list[-1] + 1
+    #Read planned file
+    plan_tab = read_planned()
+    
     mjddiff = endmjd - startmjd
     
     #Get date from final MJD converted to SJD
@@ -348,7 +334,7 @@ def current_visits_main():
     pp = PdfPages('visit_lst.pdf')
     
     #LST 1 hour visit
-    pl.hist(lst_list,bins=24,range=(0,24),color="#58ACFA")
+    pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA")
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -361,7 +347,7 @@ def current_visits_main():
     pl.clf()
     
     #LST 1 hour visit by year
-    pl.hist([lst_listy1,lst_listy2],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
+    pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2']],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -374,7 +360,7 @@ def current_visits_main():
     pl.clf()
     
     #LST 20 minute bins
-    pl.hist(lst_list,bins=72,range=(0,24),color="#58ACFA")
+    pl.hist(mjd_dict['lst'],bins=72,range=(0,24),color="#58ACFA")
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (20 min bins)".format(date))
@@ -383,7 +369,7 @@ def current_visits_main():
 #    pp.savefig()
     pl.clf()
     cbins = m.ceil(mjddiff/15.0)
-    pl.hist(mjd_list,bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
+    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
     pl.title("Current ({}) Number of Visits by MJD (15 day bins)".format(date))
     pl.xlabel("MJD")
     pl.ylabel("Number of visits")
@@ -391,7 +377,7 @@ def current_visits_main():
     pp.savefig()
     pl.clf()
     cbins = m.ceil(mjddiff/5.0)
-    pl.hist(mjd_list,bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
+    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
     pl.title("Current ({}) Number of Visits by MJD (5 day bins)".format(date))
     pl.xlabel("MJD")
     pl.ylabel("Number of visits")
@@ -426,7 +412,7 @@ def current_visits_main():
 #    pp.savefig()
     
 #     pl.clf()
-#     pl.hist(lst_list,bins=24,range=(0,24),color="#58ACFA")
+#     pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA")
 #     pl.xlabel("LST")
 #     pl.ylabel("Number of visits")
 #     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -438,17 +424,43 @@ def current_visits_main():
 #     pp.savefig()
     
     pp.close()
+
+# -------------
+# Main Function
+# -------------
+def current_visits_main():
+    
+    #Read plates file
+    plate_tab = read_plates()
+    #Read visits file
+    visit_tab = read_visits()
+    #Read design file
+    design_tab = read_design()
+    
+    comb_tab = current_planned(plate_tab,visit_tab,design_tab)
+    
+    (mjd_tab,mjd_dict) = temporal_change(plate_tab,visit_tab,comb_tab)
+    
+    
+    #Get the most recent data
+    smjd_list = sorted(mjd_dict['mjd'])
+    #startmjd = smjd_list[0]
+    startmjd = 56840
+    endmjd = smjd_list[-1] + 1
+    mjddiff = endmjd - startmjd
+    
+    lst_plots(mjd_dict, startmjd, endmjd)
     
     #Get visits per day
-    (mjd_num,mjd_bin)=np.histogram(mjd_list,range=(startmjd,endmjd),bins=mjddiff)
-    (anc_num,anc_bin)=np.histogram(anc_list,range=(startmjd,endmjd),bins=mjddiff)
-    (apok_num,apok_bin)=np.histogram(apok_list,range=(startmjd,endmjd),bins=mjddiff)
-    (bulge_num,bulge_bin)=np.histogram(bulge_list,range=(startmjd,endmjd),bins=mjddiff)
-    (clus_num,clus_bin)=np.histogram(clus_list,range=(startmjd,endmjd),bins=mjddiff)
-    (disk_num,disk_bin)=np.histogram(disk_list,range=(startmjd,endmjd),bins=mjddiff)
-    (halo_num,halo_bin)=np.histogram(halo_list,range=(startmjd,endmjd),bins=mjddiff)
-    (goal_num,goal_bin)=np.histogram(goal_list,range=(startmjd,endmjd),bins=mjddiff)
-    (sat_num,sat_bin)=np.histogram(sat_list,range=(startmjd,endmjd),bins=mjddiff)
+    (mjd_num,mjd_bin)=np.histogram(mjd_dict['mjd'],range=(startmjd,endmjd),bins=mjddiff)
+    (anc_num,anc_bin)=np.histogram(mjd_dict['anc'],range=(startmjd,endmjd),bins=mjddiff)
+    (apok_num,apok_bin)=np.histogram(mjd_dict['apok'],range=(startmjd,endmjd),bins=mjddiff)
+    (bulge_num,bulge_bin)=np.histogram(mjd_dict['bulge'],range=(startmjd,endmjd),bins=mjddiff)
+    (clus_num,clus_bin)=np.histogram(mjd_dict['clus'],range=(startmjd,endmjd),bins=mjddiff)
+    (disk_num,disk_bin)=np.histogram(mjd_dict['disk'],range=(startmjd,endmjd),bins=mjddiff)
+    (halo_num,halo_bin)=np.histogram(mjd_dict['halo'],range=(startmjd,endmjd),bins=mjddiff)
+    (goal_num,goal_bin)=np.histogram(mjd_dict['goal'],range=(startmjd,endmjd),bins=mjddiff)
+    (sat_num,sat_bin)=np.histogram(mjd_dict['sat'],range=(startmjd,endmjd),bins=mjddiff)
     
     mjd_cum = np.cumsum(mjd_num)
     
@@ -464,8 +476,8 @@ def current_visits_main():
     #Get SN2 per day
     sn2_num = list()
     sn2_mjd = list()
-    sn2_na = np.array(sn2_list)
-    mjd_na = np.array(mjd_list)
+    sn2_na = np.array(mjd_dict['sn2'])
+    mjd_na = np.array(mjd_dict['mjd'])
     
     for mjd in range(startmjd,endmjd):
         sn2_mjd.append(mjd)
@@ -483,7 +495,7 @@ def current_visits_main():
                                                       ,sn2_cum[i]))
         
     outputf.close() 
-    print "Total APOGEE-led visits: {}".format(len(mjd_list))
+    print "Total APOGEE-led visits: {}".format(len(mjd_dict['mjd']))
     #Get visits per day per design type
     
     
