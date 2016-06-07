@@ -22,6 +22,7 @@ import datetime
 # -------------------
 # Third-party imports
 # -------------------
+import astropy.table
 from astropy.table import Table
 from astropy.time import Time
 import matplotlib.pyplot as pl
@@ -32,6 +33,7 @@ import numpy as np
 import astropy as astpy
 from scipy.cluster._hierarchy import cluster_dist
 from boto.dynamodb.condition import NULL
+from _sqlite3 import Row
 # -----------------
 # Class Definitions
 # -----------------
@@ -109,7 +111,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
     complete_list = list()
     sn2_list = list()
     type_list = list()
-    mjd_list =list()    
+    mjd_list =list()
     
     for plate in range(len(plate_tab)):
         
@@ -139,7 +141,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
         #cohort
         tmp = thisdesign['array_to_string'][0].split(',')
         cohort_list.append(100*int(tmp[0]) + 10*int(tmp[2]) + int(tmp[1]))
-        planned_list.append(tmp[3])
+        planned_list.append(int(tmp[3]))
         type_list.append(tmp[4])
         
         #Search for visit info    
@@ -154,6 +156,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
             plate_visits = 0
             plate_sn2 = 0
             plate_mjd = list()
+            
             for visit in range(len(plate_visits_tab)):    
                 #Determine whether the visit is good
                 if (plate_visits_tab['qlcount'][visit] >= 2 or plate_visits_tab['redcount'][visit] >= 2): 
@@ -164,6 +167,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
                         plate_sn2 = plate_sn2 + plate_visits_tab['redsum'][visit]
                     elif(plate_visits_tab['qlcount'][visit] >=2):
                         plate_sn2 = plate_sn2 + plate_visits_tab['qlsum'][visit]
+                             
             visits_list.append(plate_visits)
             sn2_list.append(plate_sn2)
             complete_list.append(0.0)
@@ -236,7 +240,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
     
     return(output_tab)       
 
-def temporal_change(plate_tab,visit_tab,comb_tab):
+def temporal_change(comb_tab,visit_tab):
     
     mjd_dict = dict()
     
@@ -254,30 +258,41 @@ def temporal_change(plate_tab,visit_tab,comb_tab):
     mjd_dict['goal'] = list()
     mjd_dict['sat'] = list()
     mjd_dict['sn2'] = list()
+    mjd_dict['loc_id'] = list()
+    mjd_dict['cohort'] = list()
+    mjd_dict['planned'] = list()
+    mjd_dict['2vsn2'] = list()
         
     for visit in range(len(visit_tab)):
         #Determine whether the visit is good
         if (visit_tab['qlcount'][visit] < 2 and visit_tab['redcount'][visit] < 2): 
             continue 
         
-        hold = plate_tab[(plate_tab['plate_id'] == visit_tab['plate_id'][visit])]
         chold = comb_tab[(comb_tab['plate_id'] == visit_tab['plate_id'][visit])]
         
-        if len(hold) == 0:
+        if len(chold) == 0:
             continue
-        #Get rid of MaNGA-led plates
-        if (not (hold['current_survey_mode_pk'][0] is np.ma.masked 
-                 or hold['current_survey_mode_pk'][0] == 1)):
-            continue
-            
-        mjd_dict['plate'].append(hold['plate_id'][0])
+                    
+        mjd_dict['plate'].append(chold['plate_id'][0])
+        mjd_dict['loc_id'].append(chold['loc_id'][0])
+        mjd_dict['cohort'].append(chold['cohort'][0])
+        mjd_dict['planned'].append(chold['planned'][0])
         mjd_dict['mjd'].append(visit_tab['mjd'][visit])
+        
+        twovisit_sn2 = 0
+        
         #Add S/N info
         if(visit_tab['redcount'][visit] >= 2):
             plate_sn2 = visit_tab['redsum'][visit]
+            if(visit_tab['redcount'][visit] == 2):
+                twovisit_sn2 = visit_tab['redsum'][visit]
         elif(visit_tab['qlcount'][visit] >=2):
             plate_sn2 = visit_tab['qlsum'][visit]
+            if(visit_tab['qlcount'][visit] == 2):
+                twovisit_sn2 = visit_tab['qlsum'][visit] 
+        
         mjd_dict['sn2'].append(plate_sn2)      
+        mjd_dict['2vsn2'].append(twovisit_sn2)
         
         #Determine type
         if (chold['type'] == 'anc'):
@@ -298,7 +313,7 @@ def temporal_change(plate_tab,visit_tab,comb_tab):
             mjd_dict['sat'].append(visit_tab['mjd'][visit])   
         
         #Deal with going arcross 360 / 0
-        lst = (hold['center_ra'][0] + hold['hour_angle'][0])/15.0
+        lst = (chold['ra'][0] + chold['ha'][0])/15.0
         
         if (lst > 24.0): lst = lst - 24
         if (lst < 0.0): lst = lst + 24
@@ -310,10 +325,18 @@ def temporal_change(plate_tab,visit_tab,comb_tab):
             mjd_dict['lsty2'].append(lst)
     
     output_tab = Table()
+    
+    #Create a single loc_id+cohort
+    loc_cohort_list = ["{}_{}".format(a_, b_) 
+                       for a_, b_ in zip(mjd_dict['loc_id'],mjd_dict['cohort'])]
      
     output_tab['plate_id'] = mjd_dict['plate'] 
+    output_tab['loc_cohort'] = loc_cohort_list
+    output_tab['planned'] = mjd_dict['planned']
     output_tab['mjd'] = mjd_dict['mjd'] 
-    output_tab['lst'] = mjd_dict['lst'] 
+    output_tab['lst'] = mjd_dict['lst']
+    output_tab['sn2'] = mjd_dict['sn2'] 
+    output_tab['2vsn2'] = mjd_dict['2vsn2']
     
     #Write out table
     output_tab.write('visit_lst.csv',format='ascii')
@@ -439,8 +462,7 @@ def current_visits_main():
     
     comb_tab = current_planned(plate_tab,visit_tab,design_tab)
     
-    (mjd_tab,mjd_dict) = temporal_change(plate_tab,visit_tab,comb_tab)
-    
+    (mjd_tab,mjd_dict) = temporal_change(comb_tab,visit_tab)
     
     #Get the most recent data
     smjd_list = sorted(mjd_dict['mjd'])
@@ -474,31 +496,96 @@ def current_visits_main():
     sat_cum = np.cumsum(sat_num)
     
     #Get SN2 per day
+    sn2_na = mjd_tab['sn2']
     sn2_num = list()
-    sn2_mjd = list()
-    sn2_na = np.array(mjd_dict['sn2'])
-    mjd_na = np.array(mjd_dict['mjd'])
+    twovisitsn2_na = mjd_tab['2vsn2']
+    twovisitsn2_num = list()
     
+    mjd_na = mjd_tab['mjd']
+    
+    
+    #Results lists for mjd by mjd results
+    dbd_mjd = list()
+    dbd_visits = list()
+    dbd_sn2 = list()
+    dbd_sn2corr = list()
+    dbd_complete = list()
+    
+    #mytest = open('test.txt','w')
     for mjd in range(startmjd,endmjd):
-        sn2_mjd.append(mjd)
-        #Sum up the SN2 on each MJD
-        sn2_num.append(np.sum(sn2_na[(mjd_na == mjd)]))
-
-    sn2_cum =np.cumsum(sn2_num)
-    
-    outputf = open('mjd.hist','w')
-    
-    for i in range(len(mjd_num)):
-        outputf.write("{} {} {} {} {} {} {} {} {} {} {} {}\n".format(mjd_bin[i],mjd_num[i],mjd_cum[i]
-                                                      ,anc_cum[i],apok_cum[i],bulge_cum[i],clus_cum[i]
-                                                      ,disk_cum[i],halo_cum[i],goal_cum[i],sat_cum[i]
-                                                      ,sn2_cum[i]))
         
-    outputf.close() 
+        #Store Date
+        dbd_mjd.append(mjd)
+        
+        #Sum up the SN2 on each MJD
+        sn2_num.append(round(np.sum(sn2_na[(mjd_na == mjd)])/3333.0,4))
+        twovisitsn2_num.append(round(np.sum(twovisitsn2_na[(mjd_na == mjd)])/3333.0,4))
+        
+        #Reset values for this mjd
+        mjd_visits = 0
+        mjd_sn2 = 0
+        mjd_sn2corr = 0
+        mjd_comp = 0
+             
+        #Figure out the completeness for each loc_id+cohort on that day
+        this_mjd_tab = mjd_tab['loc_cohort','planned'][(mjd_tab['mjd'] <= mjd)]
+        
+        #Only work on dates that have observations
+        if (len(this_mjd_tab) == 0):
+            dbd_visits.append(0)
+            dbd_sn2.append(0)
+            dbd_sn2corr.append(0)
+            dbd_complete.append(0)
+            continue
+        
+        #Get rid of duplicate loc_cohort
+        this_mjd_tab = astropy.table.unique(this_mjd_tab)
+        
+        for row in range(len(this_mjd_tab)):
+            
+            lc_plan = this_mjd_tab['planned'][row]
+            loc_cohort = this_mjd_tab['loc_cohort'] [row]                                   
+            
+            sn2_col = mjd_tab['sn2'][((mjd_tab['loc_cohort'] == loc_cohort) & (mjd_tab['mjd'] <= mjd))]
+            lc_visits = len(sn2_col)
+            lc_sn2 = np.sum(sn2_col)
+            lc_comp = round(completion(float(lc_plan),lc_visits,lc_sn2,None),4)*lc_plan
+            lc_sn2corr = round(calculateSnCompletion(lc_plan, lc_sn2),4)*lc_plan
+            
+            mjd_visits = mjd_visits + lc_visits
+            mjd_sn2 = mjd_sn2 + lc_sn2
+            mjd_sn2corr = mjd_sn2corr + lc_sn2corr
+            mjd_comp = mjd_comp + lc_comp
+            
+        dbd_visits.append(mjd_visits)        
+        dbd_sn2.append(round(mjd_sn2 / 3333.0,4))
+        dbd_sn2corr.append(mjd_sn2corr)
+        dbd_complete.append(mjd_comp)
+        
+    sn2_cum = np.cumsum(sn2_num)
+    twovisitsn2_cum = np.cumsum(twovisitsn2_num)
+    
+    cum_tab = Table()
+    cum_tab['mjd'] = mjd_bin[0:-1]
+    cum_tab['daynum'] = mjd_num
+    cum_tab['cum'] = mjd_cum
+    cum_tab['anc'] = anc_cum
+    cum_tab['apok'] = apok_cum
+    cum_tab['bulge'] = bulge_cum
+    cum_tab['clus'] = clus_cum
+    cum_tab['disk'] = disk_cum
+    cum_tab['halo'] = halo_cum
+    cum_tab['goal'] = goal_cum
+    cum_tab['sat'] = sat_cum
+    cum_tab['visits'] = dbd_visits
+    cum_tab['sn2'] = dbd_sn2
+    cum_tab['sn2corr'] = dbd_sn2corr
+    cum_tab['complete'] = dbd_complete
+    cum_tab['2vsn2'] = twovisitsn2_cum
+   
+    cum_tab.write('mjd.hist',format='ascii')
+    
     print "Total APOGEE-led visits: {}".format(len(mjd_dict['mjd']))
-    #Get visits per day per design type
-    
-    
     
     print "Success!"
     return(0)
