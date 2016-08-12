@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Brief Description
 
@@ -56,8 +56,7 @@ def read_manga():
 
 def read_mjd():
     #Create Table
-    colnames = ['mjd','daynum','cum','anc','apok','bulge','clus','disk','halo','goal','sat','sn2']
-    mytable = Table.read('mjd.hist',format='ascii',names=colnames)
+    mytable = Table.read('mjd.hist',format='ascii')
     print "MJD Table Read Done"
 
     #Get date from final MJD
@@ -80,7 +79,14 @@ def read_master():
     print "Read MasterTable Read Done"
     return(mytable)
 
-def master_proj(startmjd=0.0,endmjd=None):
+def read_weather():
+    #Create Table
+    mytable = Table.read('weather.txt',format='ascii')
+    print "Read Weather Table Read Done"
+    return(mytable)
+
+
+def master_proj(startmjd=0.0,endmjd=None,withmeng=False,pergood=0.45):
     
     mjd_list = list()
     aptime_list = list()
@@ -97,9 +103,14 @@ def master_proj(startmjd=0.0,endmjd=None):
     for row in range(len(master_tab)):
         mjd_list.append(np.floor(master_tab['MJD'][row]) - 2400000.0)
         #See if apogee time
-        if(master_tab['Eng'][row] <= 1):
+        if (withmeng == True):
+            engint = 2
+        else:
+            engint = 1
+        
+        if(master_tab['Eng'][row] <= engint):
             bright_time = master_tab['MJD_end_bright'][row] - master_tab['MJD_start_bright'][row]
-            good_weather = 0.45
+            good_weather = pergood
             edge_efficiency = 0.985 #Deals with slack at end of night
             efficiency = good_weather*edge_efficiency
             
@@ -199,32 +210,119 @@ def apogee_proj(pp):
 def apogee_sn2(pp):
     (mjdtab,date,endmjd) = read_mjd()
     projtab = master_proj(endmjd=endmjd)
-
+    mprojtab = master_proj(endmjd=endmjd,withmeng=True)
+    gprojtab = master_proj(endmjd=endmjd,pergood=0.50)
+    gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50)
+    
+    wtab = read_weather()
+    
     print("Total Vists: {}".format(mjdtab['cum'][-1]))
+    print("Total SN2 Vists: {}".format(round(mjdtab['sn2'][-1])))
+    print("Total SN2corr Vists: {}".format(round(mjdtab['sn2corr'][-1])))
+    print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
+    print("Total Short Vistis: {}".format(round(mjdtab['2vsn2'][-1])))
     print("Total Projected Vists: {}".format(round(projtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Vists: {}".format(round(mprojtab['apvisits_cum'][-1])))
 
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['sn2']/3333.0,linewidth=2.0)
-    pl.plot(projtab['mjd'],projtab['apvisits_cum'],linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['sn2'],linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['sn2corr'],linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['complete'],linewidth=2.0)
+    pl.plot(projtab['mjd'],projtab['apvisits_cum'],'--',linewidth=2.0)
+    pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
     
     pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
-    pl.legend(('Current','SN2 Visits', 'Projected'),loc=2)
+    pl.legend(('Visits','SN2 Visits','SN2corr Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
     pl.savefig('test.png')
     pp.savefig()
     pl.clf()
 
-    pl.plot(mjdtab['mjd'],mjdtab['cum'] - mjdtab['sn2']/3333.0,linewidth=2.0)
-    pl.plot(mjdtab['mjd'],projtab['apvisits_cum'] - mjdtab['sn2']/3333.0,linewidth=2.0)
-    pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
+    #Compare SN2corr and Plate Complete to Visits
+    pl.plot(mjdtab['mjd'],mjdtab['cum'] - mjdtab['sn2corr'],color='r',linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['cum'] - mjdtab['complete'],color='c',linewidth=2.0)
+    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    pl.title('Difference from Current({}) APOGEE-2 Visits'.format(date))
+    pl.xlabel('MJD')
+    pl.ylabel("Number of Visits - Corrected Visits")
+    pl.legend(('SN2corr Visits','Plate Complete',"Twilight Obs Begin"),loc=2)
+    pl.savefig('test.png')
+    pp.savefig()
+    pl.clf()
+
+    pl.subplot(211)
+    pl.plot(mjdtab['mjd'],mjdtab['2vsn2'],color='k',linewidth=2.0)
+    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    pl.title('Current({}) APOGEE-2 2-Exposure Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
-    #pl.legend(('Current','SN2 Visits', 'Projected'),loc=2)
+    #pl.legend(('SN2corr Visits','Plate Complete'),loc=2)
+    pl.subplot(212)
+    
+    #Prevent divide by zero
+    ratio = mjdtab['2vsn2'][(mjdtab['sn2'] != 0)]/mjdtab['sn2'][(mjdtab['sn2'] != 0)]
+    pl.plot(mjdtab['mjd'][(mjdtab['sn2'] != 0)],ratio*100,color='k',linewidth=2.0)
+    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    pl.xlabel('MJD')
+    pl.ylabel("Percent of SN2 Visits")
     pl.savefig('test.png')
     pp.savefig()
     pl.clf()
 
+
+    #Let's look at weather    
+    wdate = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in wtab['Date']]
+    wmjd = Time(wdate,format='datetime')
+    
+    pl.plot(wmjd.mjd,wtab['per_good'],linewidth=2.0)
+    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
+    pl.axhline(np.median(wtab['per_good']),color='r',linestyle='--',linewidth=2.0)
+    pl.title('Percent Good Weather')
+    pl.xlabel('MJD')
+    pl.ylabel("Percent Good Weather")
+    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
+    pl.savefig('test.png')
+    pp.savefig()
+    pl.clf()
+    
+    #Everything combined
+    pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['sn2corr']-mjdtab['2vsn2'],color='r',linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['complete']-mjdtab['2vsn2'],color='c',linewidth=2.0)
+    pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
+    pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
+    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    
+    pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
+    pl.xlabel('MJD')
+    pl.ylabel("Number of Visits - 2 Exp. Vists")
+    #pl.xlim(57400,57550)
+    #pl.ylim(ymin=600)
+    pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)', 
+               'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)
+    pl.savefig('test.png')
+    pp.savefig()
+    pl.clf()
+    
+    pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['sn2corr']-mjdtab['2vsn2'],color='r',linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['complete']-mjdtab['2vsn2'],color='c',linewidth=2.0)
+    pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
+    pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
+    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
+    pl.xlabel('MJD')
+    pl.ylabel("Number of Visits - 2 Exp. Vists")
+    pl.xlim(57400,57550)
+    pl.ylim(ymin=600)
+    pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)',
+                'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)  
+    
+    pl.savefig('test.png')
+    pp.savefig()
+    pl.clf()
+    
 
 def apogee_type(pp):
     (mjdtab,date,endmjd) = read_mjd()
