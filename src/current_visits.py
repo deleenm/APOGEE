@@ -125,7 +125,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
         loc_list.append(plate_tab['location_id'][plate])
         ra_list.append(round(plate_tab['center_ra'][plate]/15.0,4))
         dec_list.append(plate_tab['center_dec'][plate])
-        ha_list.append(plate_tab['hour_angle'][plate])
+        ha_list.append(round(plate_tab['hour_angle'][plate]/15.0,4))
         maxha_list.append(plate_tab['ha_observable_max'][plate])
         minha_list.append(plate_tab['ha_observable_min'][plate])
         
@@ -313,10 +313,12 @@ def temporal_change(comb_tab,visit_tab):
             mjd_dict['sat'].append(visit_tab['mjd'][visit])   
         
         #Deal with going arcross 360 / 0
-        lst = (chold['ra'][0] + chold['ha'][0])/15.0
+        lst = (chold['ra'][0] + chold['ha'][0])
         
         if (lst > 24.0): lst = lst - 24
         if (lst < 0.0): lst = lst + 24
+        
+        lst = round(lst,4)
         
         mjd_dict['lst'].append(lst)
         if (visit_tab['mjd'][visit] < 57210):
