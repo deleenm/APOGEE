@@ -223,6 +223,8 @@ def apogee_sn2(pp):
     print("Total Short Vistis: {}".format(round(mjdtab['2vsn2'][-1])))
     print("Total Projected Vists: {}".format(round(projtab['apvisits_cum'][-1])))
     print("Total Projected with Eng Vists: {}".format(round(mprojtab['apvisits_cum'][-1])))
+    print("Total Projected Vists (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Vists (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
 
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sn2'],linewidth=2.0)
