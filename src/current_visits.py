@@ -262,6 +262,12 @@ def temporal_change(comb_tab,visit_tab):
     mjd_dict['cohort'] = list()
     mjd_dict['planned'] = list()
     mjd_dict['2vsn2'] = list()
+    mjd_dict['2vlst'] = list()
+    mjd_dict['2vlsty1'] = list()
+    mjd_dict['2vlsty2'] = list()
+    mjd_dict['lstno2v'] = list()
+    mjd_dict['lsty1no2v'] = list()
+    mjd_dict['lsty2no2v'] = list()
         
     for visit in range(len(visit_tab)):
         #Determine whether the visit is good
@@ -325,7 +331,36 @@ def temporal_change(comb_tab,visit_tab):
             mjd_dict['lsty1'].append(lst)
         else:
             mjd_dict['lsty2'].append(lst)
-    
+            
+        #Deal with 2visit LST
+        if(visit_tab['redcount'][visit] >= 2):
+            if(visit_tab['redcount'][visit] == 2):
+                mjd_dict['2vlst'].append(lst)
+                if (visit_tab['mjd'][visit] < 57210):
+                    mjd_dict['2vlsty1'].append(lst)
+                else:
+                    mjd_dict['2vlsty2'].append(lst)
+            else:
+                mjd_dict['lstno2v'].append(lst)
+                if (visit_tab['mjd'][visit] < 57210):
+                    mjd_dict['lsty1no2v'].append(lst)
+                else:
+                    mjd_dict['lsty2no2v'].append(lst)
+        elif(visit_tab['qlcount'][visit] >= 2):
+            if(visit_tab['qlcount'][visit] == 2):
+                mjd_dict['2vlst'].append(lst)
+                if (visit_tab['mjd'][visit] < 57210):
+                    mjd_dict['2vlsty1'].append(lst)
+                else:
+                    mjd_dict['2vlsty2'].append(lst)
+            else:
+                mjd_dict['lstno2v'].append(lst)
+                if (visit_tab['mjd'][visit] < 57210):
+                    mjd_dict['lsty1no2v'].append(lst)
+                else:
+                    mjd_dict['lsty2no2v'].append(lst)
+        
+                
     output_tab = Table()
     
     #Create a single loc_id+cohort
@@ -372,9 +407,34 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.clf()
     
     #LST 1 hour visit by year
+    (yrhst1,yrbins1) = np.histogram(mjd_dict['lsty1'],bins=24,range=(0,24))
+    (yrhst2,yrbins2) = np.histogram(mjd_dict['lsty2'],bins=24,range=(0,24))
+    (yrhst1_no,yrbins1) = np.histogram(mjd_dict['lsty1no2v'],bins=24,range=(0,24))
+    (yrhst2_no,yrbins2) = np.histogram(mjd_dict['lsty2no2v'],bins=24,range=(0,24))
+    #Write the data out
+    lstout = open('lstdist.txt','w')
+    lstout.write("#LST Proj_visit Yr1_Visit Yr2_visit Yr1_no2exp Yr2_no2exp\n")
+    for i in range(24):
+        lstout.write("{} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
+                                                  yrhst2[i],yrhst1_no[i],yrhst2_no[i]))
+    lstout.close()
+    
     pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2']],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
+    pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
+    #pl.xlim(-1,24)
+    #pl.savefig('lst_visit.png',dpi=400)
+    pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Actual Year1', 'Actual Year2'))
+    pp.savefig()
+    pl.clf()
+    
+    #LST 1 hour visit by year - 2exp visits
+    pl.hist([mjd_dict['lsty1no2v'],mjd_dict['lsty2no2v']],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
+    pl.xlabel("LST")
+    pl.ylabel("Number of visits - 2 expsure visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
     #pl.xlim(-1,24)
     #pl.savefig('lst_visit.png',dpi=400)

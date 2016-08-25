@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Brief Description
 
@@ -70,9 +70,9 @@ def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0
                'sn_target': 3136}
     
     hours=0
-    nslots=0
     for row in range(len(master_tab)):
         mjd_list.append(np.floor(master_tab['MJD'][row]) - 2400000.0)
+        nslots=0
         #See if apogee time
         if (withmeng == True):
             engint = 2
@@ -87,7 +87,7 @@ def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0
             # Define APOGEE-II blocks for tonight
             bright_time = (master_tab['MJD_end_bright'][row] - master_tab['MJD_start_bright'][row]) * 24
             hours = hours + bright_time
-            nslots = min([int(round(bright_time / ((par['exposure'] + par['overhead']) / 60))), par['ncarts']])
+            nslots = min([int(bright_time / ((par['exposure'] + par['overhead']) / 60)), par['ncarts']])
             if nslots != 0:
                 times = [master_tab['MJD_start_bright'][row] + (par['exposure'] + par['overhead']) 
                          / 60 / 24 * x for x in range(nslots)]
@@ -97,12 +97,14 @@ def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0
                 if (master_tab['MJD_start_bright'][row] < master_tab['MJD_start_dark'][row] 
                                 or master_tab['MJD_start_dark'][row] == 0):
                     # Determine whether we should add another exposure (leftover time > 15min)
-                    if len(times) < par['ncarts'] and bright_time - sum(lengths) > 0:
+                    if len(times) < par['ncarts'] and bright_time - sum(lengths) > par['overhead'] / 60:
                         times.append(master_tab['MJD_start_bright'][row] + len(times) 
                                      * (par['exposure'] + par['overhead']) / 60 / 24)
                         lengths.append(bright_time - sum(lengths))
                     # Because APOGEE-II is first, the last exposure will not have overhead
-                    else: lengths[-1] = par['exposure'] / 60
+                    else: 
+                        pass
+                        #lengths[-1] = par['exposure'] / 60
         
                 # APOGEE-II ends the night
                 else:
@@ -115,26 +117,30 @@ def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0
                 times = []
                 lengths = []
             
-        #Now determine the LSTs for each visit
-        if nslots != 0:
-            times = np.array(times)
-            lengths = np.array(lengths)
+            #Now determine the LSTs for each visit
+            if nslots != 0:
+                times = np.array(times)
+                lengths = np.array(lengths)
     
-            midlst = apolst(times + (lengths/24.0/2.0))
-            lst_list.extend(midlst)
-            len_list.extend(lengths)
+                midlst = apolst(times + (lengths/24.0/2.0))
+                lst_list.extend(midlst)
+                len_list.extend(lengths)
             
- 
     return(np.array(lst_list),np.array(len_list),hours)
 
 # -------------
 # Main Function
 # -------------
 def schedule_main():
+    #Year 3 differences
+    (begdate,enddate)= (57618,57945)
+    #(begdate,enddate)= (57645,57648)
+    
     (oldlst,oldlen,oldhours) = master_proj_lst('../schedule/Sch_base.jan16.v2h.txt',
-                                               startmjd=57618,endmjd=57945)
+                                               startmjd=begdate,endmjd=enddate)
     (newlst,newlen,newhours) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
-                                               startmjd=57618,endmjd=57945)
+                                               startmjd=begdate,endmjd=enddate)
+    
     
     pp = PdfPages('../schedule/schedule_diff.pdf')
     
@@ -181,12 +187,22 @@ def schedule_main():
     pp.close()
 
     #Print out some useful info
-    print("Old Hours: {} New Hours: {}".format(oldhours,newhours))
-    print("Diff Hours: {} Diff Visits:{} ".format(oldhours-newhours,np.sum(lstdiffarr)))
+    print("Old Hours: {:.2f} New Hours: {:.2f}".format(oldhours,newhours))
+    print("Old Visit Hours: {:.2f} New Visit Hours: {:.2f}".format(np.sum(oldlen),np.sum(newlen)))
+    print("Diff Hours: {:.2f} Diff Visit Hours: {:.2f} Diff Visits:{} ".format(oldhours-newhours,
+                                                                     np.sum(oldlen)-np.sum(newlen),
+                                                                     np.sum(lstdiffarr)))
 
+#    print("Old Lengths: {}".format(oldlen))
+#    print("New Lengths: {}".format(newlen))
+#    print("Old Times: {}".format(oldhours))
+#    print("New Times: {}".format(newhours))
+#    print("Old LST: {}".format(oldlst))
+#    print("New LST: {}".format(newlst))
+    
     print('LST Diff')
     for i in range(24):
-        print('{} {:.1f}'.format(i,-1.0*hrdiffarr[i]))
+        print('{} {:.2f}'.format(i,-1.0*hrdiffarr[i]))
 
     print("Finished")
 
