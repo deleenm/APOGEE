@@ -75,7 +75,7 @@ def read_proj():
 
 def read_master():
     #Create Table
-    mytable = Table.read('Sch_base.jan16.v2h.txt',format='ascii')
+    mytable = Table.read('Sch_base.Aug16.RM_ELG.txt',format='ascii')
     print "Read MasterTable Read Done"
     return(mytable)
 
@@ -188,13 +188,14 @@ def combined_plot(pp):
     pl.legend(('APOGEE-led', 'MaNGA-led','Total'),loc=2)
     pl.savefig('test.png')
     pp.savefig()
+    pl.clf()
 
 def apogee_proj(pp):
     (mjdtab,date,endmjd) = read_mjd()
     projtab = master_proj(endmjd=endmjd)
     
-    print("Total Vists: {}".format(mjdtab['cum'][-1]))
-    print("Total Projected Vists: {}".format(round(projtab['apvisits_cum'][-1])))
+    print("Total Visits: {}".format(mjdtab['cum'][-1]))
+    print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
     
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
     pl.plot(projtab['mjd'],projtab['apvisits_cum'],linewidth=2.0)
@@ -214,17 +215,15 @@ def apogee_sn2(pp):
     gprojtab = master_proj(endmjd=endmjd,pergood=0.50)
     gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50)
     
-    wtab = read_weather()
-    
-    print("Total Vists: {}".format(mjdtab['cum'][-1]))
-    print("Total SN2 Vists: {}".format(round(mjdtab['sn2'][-1])))
-    print("Total SN2corr Vists: {}".format(round(mjdtab['sn2corr'][-1])))
+    print("Total Visits: {}".format(mjdtab['cum'][-1]))
+    print("Total SN2 Visits: {}".format(round(mjdtab['sn2'][-1])))
+    print("Total SN2corr Visits: {}".format(round(mjdtab['sn2corr'][-1])))
     print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
     print("Total Short Vistis: {}".format(round(mjdtab['2vsn2'][-1])))
-    print("Total Projected Vists: {}".format(round(projtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Vists: {}".format(round(mprojtab['apvisits_cum'][-1])))
-    print("Total Projected Vists (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Vists (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
+    print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
+    print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
 
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sn2'],linewidth=2.0)
@@ -271,22 +270,6 @@ def apogee_sn2(pp):
     pl.savefig('test.png')
     pp.savefig()
     pl.clf()
-
-
-    #Let's look at weather    
-    wdate = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in wtab['Date']]
-    wmjd = Time(wdate,format='datetime')
-    
-    pl.plot(wmjd.mjd,wtab['per_good'],linewidth=2.0)
-    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
-    pl.axhline(np.median(wtab['per_good']),color='r',linestyle='--',linewidth=2.0)
-    pl.title('Percent Good Weather')
-    pl.xlabel('MJD')
-    pl.ylabel("Percent Good Weather")
-    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
-    pl.savefig('test.png')
-    pp.savefig()
-    pl.clf()
     
     #Everything combined
     pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
@@ -324,7 +307,33 @@ def apogee_sn2(pp):
     pl.savefig('test.png')
     pp.savefig()
     pl.clf()
+
+def standard_plot(pp):
+    (mjdtab,date,endmjd) = read_mjd()
+    projtab = master_proj(endmjd=endmjd)
+    mprojtab = master_proj(endmjd=endmjd,withmeng=True)
+    gprojtab = master_proj(endmjd=endmjd,pergood=0.50)
+    gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50)
     
+    print("Total Visits: {}".format(mjdtab['cum'][-1]))
+    print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
+    print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
+    print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
+    print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
+
+    pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
+    pl.plot(mjdtab['mjd'],mjdtab['complete'],linewidth=2.0)
+    pl.plot(projtab['mjd'],projtab['apvisits_cum'],'--',linewidth=2.0)
+    pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
+    
+    pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
+    pl.xlabel('MJD')
+    pl.ylabel("Number of Visits")
+    pl.legend(('Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
+    pl.savefig('test.png')
+    pp.savefig()
+    pl.clf()    
 
 def apogee_type(pp):
     (mjdtab,date,endmjd) = read_mjd()
@@ -340,7 +349,7 @@ def apogee_type(pp):
     pl.plot(mjdtab['mjd'],mjdtab['goal'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sat'],linewidth=2.0)
     
-    pl.title('Current([]) APOGEE-2 Visits by Type'.format(date))
+    pl.title('Current({}) APOGEE-2 Visits by Type'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
     pl.yscale('log')
@@ -352,6 +361,39 @@ def apogee_type(pp):
     pl.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     pp.savefig(bbox_extra_artists=(lgd,), bbox_inches='tight')
     pl.clf()
+
+def weather_plot(pp):
+    wtab = read_weather()
+    
+    #Let's look at weather
+    #https://trac.sdss.org/wiki/APO/Observatory/ObserverForum/SDSSOperationTimeTracking    
+    wdate = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in wtab['Date']]
+    wmjd = Time(wdate,format='datetime')
+    
+    med_good = np.median(wtab['per_good'])
+    print("Median Percent Good Weather: {}%".format(med_good))
+    
+    pl.plot(wmjd.mjd,wtab['per_good'],linewidth=2.0)
+    
+    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
+    pl.axhline(med_good,color='r',linestyle='--',linewidth=2.0)
+    pl.title('Percent Good Weather')
+    pl.xlabel('MJD')
+    pl.ylabel("Percent Good Weather")
+    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
+    pp.savefig()
+    pl.clf()
+
+
+    pl.plot(wdate,wtab['per_good'],linewidth=2.0)
+    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
+    pl.axhline(med_good,color='r',linestyle='--',linewidth=2.0)
+    pl.gcf().autofmt_xdate()
+    pl.title('Percent Good Weather')
+    pl.ylabel("Percent Good Weather")
+    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
+    pp.savefig()
+    pl.clf()
     
 # -------------
 # Main Function
@@ -362,10 +404,12 @@ def data_plots_main():
     pp = PdfPages('progress.pdf')
     #plate_windows(pp)
     #pp = PdfPages('progress.pdf')
-    #combined_plot(pp)
-    #apogee_proj(pp)
-    #apogee_type(pp)
-    apogee_sn2(pp)
+    #combined_plot(pp) #Not up to date.
+    apogee_proj(pp)
+    apogee_type(pp)
+    #apogee_sn2(pp)
+    standard_plot(pp)
+    weather_plot(pp)
     pp.close()
     print("Complete!")
 
