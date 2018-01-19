@@ -71,26 +71,26 @@ def calculateSnCompletion(vplan, sn):
 
 def read_design():
     #Create Table
-    mytable = Table.read('design.csv',delimiter='|')
+    mytable = Table.read('../design.csv',delimiter='|')
     print "Design Table Read Done"
     return(mytable)
 
 def read_plates():
     #Create Table
-    mytable = Table.read('plates.csv',delimiter='|')
+    mytable = Table.read('../plates.csv',delimiter='|')
     print "Plates Table Read Done"
     #Note current_survey_mode Null or 1 APOGEE-led 2 or 3 MaNGA-led
     return(mytable)
     
 def read_visits():
     #Create Table
-    mytable = Table.read('visits.csv',delimiter='|')
+    mytable = Table.read('../visits.csv',delimiter='|')
     print "Visits Table Read Done"
     return(mytable)
 
 def read_planned():
     #Create Table
-    mytable = Table.read('planned_visits.csv',format='ascii')
+    mytable = Table.read('../planned_visits.csv',format='ascii')
     print "Planned Visits Table Read Done"
     return(mytable)
 
@@ -248,7 +248,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
     output_tab['mjds'] = fixed_mjd_list
     
     #Write out table
-    output_tab.write('plate_visits.csv',format='ascii',overwrite=True)   
+    output_tab.write('../plate_visits.csv',format='ascii',overwrite=True)   
     
     return(output_tab)       
 
@@ -401,7 +401,7 @@ def temporal_change(comb_tab,visit_tab):
     output_tab['2vsn2'] = mjd_dict['2vsn2']
     
     #Write out table
-    output_tab.write('visit_lst.csv',format='ascii',overwrite=True)
+    output_tab.write('../visit_lst.csv',format='ascii',overwrite=True)
     return (output_tab,mjd_dict)
 
 def lst_plots(mjd_dict,startmjd,endmjd):
@@ -416,7 +416,7 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     date = (jddate.datetime).strftime('%m/%d/%y')
        
     #Make Plot
-    pp = PdfPages('visit_lst.pdf')
+    pp = PdfPages('../visit_lst.pdf')
     
     #LST 1 hour visit
     pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA",edgecolor='black')
@@ -440,7 +440,7 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     (yrhst2_no,yrbins2) = np.histogram(mjd_dict['lsty2no2v'],bins=24,range=(0,24))
     (yrhst3_no,yrbins3) = np.histogram(mjd_dict['lsty3no2v'],bins=24,range=(0,24))
     #Write the data out
-    lstout = open('lstdist.txt','w')
+    lstout = open('../lstdist.txt','w')
     lstout.write("#LST Proj_visit Yr1_Visit Yr2_Visit Yr3_Visit Yr1_no2exp Yr2_no2exp Yr3_visit_no2exp\n")
     for i in range(24):
         lstout.write("{} {} {} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
@@ -642,7 +642,7 @@ def current_visits_main():
     cum_tab['complete'] = dbd_complete
     cum_tab['2vsn2'] = twovisitsn2_cum
    
-    cum_tab.write('mjd.hist',format='ascii',overwrite=True)
+    cum_tab.write('../mjd.hist',format='ascii',overwrite=True)
     
     print "Total APOGEE-led visits: {}".format(len(mjd_dict['mjd']))
     

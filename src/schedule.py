@@ -46,7 +46,7 @@ def read_master(masterfile):
     return(mytable)
 
 def read_lst():
-     mytable = Table.read('lstdist.txt',format='ascii')
+     mytable = Table.read('../lstdist.txt',format='ascii')
      return mytable
 
 def apolst(intimes):
@@ -139,13 +139,13 @@ def sched_diff():
     (begdate,enddate)= (57618,57945)
     #(begdate,enddate)= (57645,57648)
     
-    (oldlst,oldlen,oldhours) = master_proj_lst('schedule/Sch_base.jan16.v2h.txt',
+    (oldlst,oldlen,oldhours) = master_proj_lst('../schedule/Sch_base.jan16.v2h.txt',
                                                startmjd=begdate,endmjd=enddate)
-    (newlst,newlen,newhours) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (newlst,newlen,newhours) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=begdate,endmjd=enddate)
     
     
-    pp = PdfPages('schedule/schedule_diff.pdf')
+    pp = PdfPages('../schedule/schedule_diff.pdf')
     
     #Plot both visit distributions
     pl.hist(oldlst,bins=24,range=(0,24))
@@ -210,7 +210,7 @@ def sched_diff():
 def predict_mjd(end1,good_weather,weng=False):
     beg1  = 0
     
-    (lst,length,hours) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lst,length,hours) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg1,endmjd=end1,withmeng=weng)
     
     edge_efficiency = 0.985 #Deals with slack at end of night
@@ -234,22 +234,22 @@ def predict_visits():
     #Year 6
     (beg6,end6)= (58710,59032)
     
-    pp = PdfPages('proj_lst.pdf')
+    pp = PdfPages('../proj_lst.pdf')
 
     weng = False   
-    (lsty1,leny1,hoursy1) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty1,leny1,hoursy1) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg1,endmjd=end1,withmeng=weng)
-    (lsty2,leny2,hoursy2) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty2,leny2,hoursy2) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg2,endmjd=end2,withmeng=weng)
-    (lsty3,leny3,hoursy3) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty3,leny3,hoursy3) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg3,endmjd=end3,withmeng=weng)
-    (lsty4,leny4,hoursy4) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty4,leny4,hoursy4) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg4,endmjd=end4,withmeng=weng)
-    (lsty5,leny5,hoursy5) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty5,leny5,hoursy5) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg5,endmjd=end5,withmeng=weng)
-    (lsty6,leny6,hoursy6) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lsty6,leny6,hoursy6) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg6,endmjd=end6,withmeng=weng)
-    (lstfull,lenfull,hoursfull) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+    (lstfull,lenfull,hoursfull) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=beg1,endmjd=end6,withmeng=weng)
     
 
@@ -281,7 +281,7 @@ def predict_visits():
     out_tab['yr6'] = np.around(histy6 * pergood,1)
     out_tab['Full_Survey'] = np.around(histfull * pergood,1)
     
-    out_tab.write('proj_lst.txt',format='ascii',overwrite=True)
+    out_tab.write('../proj_lst.txt',format='ascii',overwrite=True)
 
     #LST 1 hour visit by year
     lst_dict = read_lst()
