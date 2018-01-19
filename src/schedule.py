@@ -30,6 +30,8 @@ import matplotlib.ticker as ticker
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import astropy as astpy
+from data_plots import read_mjd
+from current_visits import read_planned
 # -----------------
 # Class Definitions
 # -----------------
@@ -43,6 +45,10 @@ def read_master(masterfile):
     print ("Read MasterTable Read Done")
     return(mytable)
 
+def read_lst():
+     mytable = Table.read('lstdist.txt',format='ascii')
+     return mytable
+
 def apolst(intimes):
     
     t = Time(intimes,format='jd')
@@ -52,7 +58,7 @@ def apolst(intimes):
     lst = t.sidereal_time('apparent',longitude=-105.820278)
     return(lst.deg / 15.0)
 
-def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0.45):
+def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False):
     
     mjd_list = list()
     lst_list = list()
@@ -128,21 +134,18 @@ def master_proj_lst(masterfile,startmjd=0.0,endmjd=None,withmeng=False,pergood=0
             
     return(np.array(lst_list),np.array(len_list),hours)
 
-# -------------
-# Main Function
-# -------------
-def schedule_main():
+def sched_diff():
     #Year 3 differences
     (begdate,enddate)= (57618,57945)
     #(begdate,enddate)= (57645,57648)
     
-    (oldlst,oldlen,oldhours) = master_proj_lst('../schedule/Sch_base.jan16.v2h.txt',
+    (oldlst,oldlen,oldhours) = master_proj_lst('schedule/Sch_base.jan16.v2h.txt',
                                                startmjd=begdate,endmjd=enddate)
-    (newlst,newlen,newhours) = master_proj_lst('../schedule/Sch_base.Aug16.RM_ELG.txt',
+    (newlst,newlen,newhours) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
                                                startmjd=begdate,endmjd=enddate)
     
     
-    pp = PdfPages('../schedule/schedule_diff.pdf')
+    pp = PdfPages('schedule/schedule_diff.pdf')
     
     #Plot both visit distributions
     pl.hist(oldlst,bins=24,range=(0,24))
@@ -203,6 +206,122 @@ def schedule_main():
     print('LST Diff')
     for i in range(24):
         print('{} {:.2f}'.format(i,-1.0*hrdiffarr[i]))
+
+def predict_mjd(end1,good_weather,weng=False):
+    beg1  = 0
+    
+    (lst,length,hours) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg1,endmjd=end1,withmeng=weng)
+    
+    edge_efficiency = 0.985 #Deals with slack at end of night
+    efficiency = good_weather*edge_efficiency
+    #Only take visits with lengths greater than 33+20 minutes
+    print('Projected Visits {:.0f} through {}'.format(len(lst[(length > 0.88)])*good_weather,end1))
+    print('Projected Visits (Blanton) {:.0f} through {}'.format(hours*60/87*efficiency,end1))
+    
+
+def predict_visits():
+    #Year 1 
+    (beg1,end1)= (56840,57210)
+    #Year 2
+    (beg2,end2)= (57250,57581)
+    #Year 3
+    (beg3,end3)= (57618,57945)
+    #Year 4
+    (beg4,end4)= (57983,58302)
+    #Year 5
+    (beg5,end5)= (58340,58666)
+    #Year 6
+    (beg6,end6)= (58710,59032)
+    
+    pp = PdfPages('proj_lst.pdf')
+
+    weng = False   
+    (lsty1,leny1,hoursy1) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg1,endmjd=end1,withmeng=weng)
+    (lsty2,leny2,hoursy2) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg2,endmjd=end2,withmeng=weng)
+    (lsty3,leny3,hoursy3) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg3,endmjd=end3,withmeng=weng)
+    (lsty4,leny4,hoursy4) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg4,endmjd=end4,withmeng=weng)
+    (lsty5,leny5,hoursy5) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg5,endmjd=end5,withmeng=weng)
+    (lsty6,leny6,hoursy6) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg6,endmjd=end6,withmeng=weng)
+    (lstfull,lenfull,hoursfull) = master_proj_lst('schedule/Sch_base.Aug16.RM_ELG.txt',
+                                               startmjd=beg1,endmjd=end6,withmeng=weng)
+    
+
+    #Only take visits with lengths greater than 33+20 minutes
+    (histy1,binsy1) = np.histogram(lsty1[(leny1 > 0.88)],bins=24)
+    (histy2,binsy2) = np.histogram(lsty2[(leny2 > 0.88)],bins=24)
+    (histy3,binsy3) = np.histogram(lsty3[(leny3 > 0.88)],bins=24)
+    (histy4,binsy4) = np.histogram(lsty4[(leny4 > 0.88)],bins=24)
+    (histy5,binsy5) = np.histogram(lsty5[(leny5 > 0.88)],bins=24)
+    (histy6,binsy6) = np.histogram(lsty6[(leny6 > 0.88)],bins=24)
+    (histfull,binsfull) = np.histogram(lstfull[(lenfull > 0.88)],bins=24)
+        
+    center = np.arange(0,24) + 0.5
+
+    pergood = .45
+
+    #Read planned file
+    plan_tab = read_planned()
+
+
+    out_tab = Table()
+    out_tab['lst'] = center
+    out_tab['Plan'] = plan_tab['visits']
+    out_tab['yr1'] = np.around(histy1 * pergood,1)
+    out_tab['yr2'] = np.around(histy2 * pergood,1)
+    out_tab['yr3'] = np.around(histy3 * pergood,1)
+    out_tab['yr4'] = np.around(histy4 * pergood,1)
+    out_tab['yr5'] = np.around(histy5 * pergood,1)
+    out_tab['yr6'] = np.around(histy6 * pergood,1)
+    out_tab['Full_Survey'] = np.around(histfull * pergood,1)
+    
+    out_tab.write('proj_lst.txt',format='ascii',overwrite=True)
+
+    #LST 1 hour visit by year
+    lst_dict = read_lst()
+    
+    (date,endmjd) = (read_mjd())[1:]
+    
+    predict_mjd(endmjd, pergood, weng)
+    predict_mjd(end6,pergood,weng)
+        
+    pl.bar(center, lst_dict['Yr1_Visit'],1,color="pink",edgecolor='black')
+    pl.bar(center, lst_dict['Yr2_Visit'],1,bottom=lst_dict['Yr1_Visit'],color="#58ACFA",edgecolor='black')
+    pl.bar(center, lst_dict['Yr3_Visit'],1,bottom=lst_dict['Yr1_Visit']+lst_dict['Yr2_Visit']
+                                                                                      ,color="lightgreen",edgecolor='black')
+    pl.xlabel("LST")
+    pl.ylabel("Number of visits")
+    pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
+    #pl.xlim(-1,24)
+    #pl.savefig('lst_visit.png',dpi=400)
+    pl.plot(center,out_tab['yr1'],color="r",linewidth=2.0)
+    basenum = out_tab['yr1']
+    pl.plot(center,out_tab['yr2']+basenum,color="b",linewidth=2.0)
+    basenum = basenum + out_tab['yr2']
+    pl.plot(center,out_tab['yr3']+basenum,color="g",linewidth=2.0)
+    
+    pl.plot(plan_tab['mid'],plan_tab['visits'],':',color="r",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,':',color="b",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,':',color="g",linewidth=2.0)
+    
+    pl.legend(('Proj Year1','Proj Year2','Proj Year3','Plan Year1','Plan Year2','Plan Year3','Actual Year1', 'Actual Year2','Actual Year3'),
+              ncol=2, fontsize='small')
+    pp.savefig()
+    pl.clf()
+    pp.close()
+
+# -------------
+# Main Function
+# -------------
+def schedule_main():
+    #sched_diff()
+    predict_visits()
 
     print("Finished")
 

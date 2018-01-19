@@ -112,6 +112,9 @@ def current_planned(plate_tab,visit_tab,design_tab):
     sn2_list = list()
     type_list = list()
     mjd_list =list()
+    ploc_list = list()
+    temp_list = list()
+    exptime_list = list()
     
     for plate in range(len(plate_tab)):
         
@@ -130,6 +133,8 @@ def current_planned(plate_tab,visit_tab,design_tab):
         minha_list.append(plate_tab['ha_observable_min'][plate])
         
         design_list.append(plate_tab['design_pk'][plate])
+        ploc_list.append(plate_tab['label'][plate])
+        temp_list.append(plate_tab['temperature'][plate])
         
         #Search for design information
         thisdesign = design_tab[(design_tab['plate_id'] == plate_tab['plate_id'][plate])]
@@ -143,6 +148,10 @@ def current_planned(plate_tab,visit_tab,design_tab):
         cohort_list.append(100*int(tmp[0]) + 10*int(tmp[2]) + int(tmp[1]))
         planned_list.append(int(tmp[3]))
         type_list.append(tmp[4])
+        if (len(tmp) == 7):
+            exptime_list = tmp[6]
+        else:
+            exptime_list = 500
         
         #Search for visit info    
         plate_visits_tab = visit_tab[(visit_tab['plate_id'] == plate_tab['plate_id'][plate])]
@@ -195,11 +204,14 @@ def current_planned(plate_tab,visit_tab,design_tab):
     output_tab['ha'] = ha_list 
     output_tab['maxha'] = maxha_list 
     output_tab['minha'] = minha_list 
+    output_tab['temp'] = temp_list
+    output_tab['exptime'] = exptime_list
     output_tab['visits'] = visits_list 
     output_tab['planned'] = planned_list
     output_tab['complete'] = complete_list
     output_tab['sn2'] = sn2_list
     output_tab['type'] = type_list 
+    output_tab['location'] = ploc_list
     output_tab['mjds'] = mjd_list 
     
     #Now correct visit entries for shared locations+cohorts
@@ -236,7 +248,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
     output_tab['mjds'] = fixed_mjd_list
     
     #Write out table
-    output_tab.write('plate_visits.csv',format='ascii')   
+    output_tab.write('plate_visits.csv',format='ascii',overwrite=True)   
     
     return(output_tab)       
 
@@ -249,6 +261,7 @@ def temporal_change(comb_tab,visit_tab):
     mjd_dict['lst'] = list()
     mjd_dict['lsty1'] = list()
     mjd_dict['lsty2'] = list()
+    mjd_dict['lsty3'] = list()
     mjd_dict['anc'] = list()
     mjd_dict['apok'] = list()
     mjd_dict['bulge'] = list()
@@ -265,9 +278,11 @@ def temporal_change(comb_tab,visit_tab):
     mjd_dict['2vlst'] = list()
     mjd_dict['2vlsty1'] = list()
     mjd_dict['2vlsty2'] = list()
+    mjd_dict['2vlsty3'] = list()
     mjd_dict['lstno2v'] = list()
     mjd_dict['lsty1no2v'] = list()
     mjd_dict['lsty2no2v'] = list()
+    mjd_dict['lsty3no2v'] = list()
         
     for visit in range(len(visit_tab)):
         #Determine whether the visit is good
@@ -329,8 +344,10 @@ def temporal_change(comb_tab,visit_tab):
         mjd_dict['lst'].append(lst)
         if (visit_tab['mjd'][visit] < 57210):
             mjd_dict['lsty1'].append(lst)
-        else:
+        elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
             mjd_dict['lsty2'].append(lst)
+        else:
+            mjd_dict['lsty3'].append(lst)
             
         #Deal with 2visit LST
         if(visit_tab['redcount'][visit] >= 2):
@@ -338,27 +355,35 @@ def temporal_change(comb_tab,visit_tab):
                 mjd_dict['2vlst'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['2vlsty1'].append(lst)
-                else:
+                elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['2vlsty2'].append(lst)
+                else:
+                    mjd_dict['2vlsty3'].append(lst)
             else:
                 mjd_dict['lstno2v'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['lsty1no2v'].append(lst)
-                else:
+                elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
+                else:
+                    mjd_dict['lsty3no2v'].append(lst)
         elif(visit_tab['qlcount'][visit] >= 2):
             if(visit_tab['qlcount'][visit] == 2):
                 mjd_dict['2vlst'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['2vlsty1'].append(lst)
-                else:
+                elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['2vlsty2'].append(lst)
+                else:
+                    mjd_dict['2vlsty3'].append(lst)
             else:
                 mjd_dict['lstno2v'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['lsty1no2v'].append(lst)
-                else:
+                elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
+                else:
+                    mjd_dict['lsty3no2v'].append(lst)
         
                 
     output_tab = Table()
@@ -376,7 +401,7 @@ def temporal_change(comb_tab,visit_tab):
     output_tab['2vsn2'] = mjd_dict['2vsn2']
     
     #Write out table
-    output_tab.write('visit_lst.csv',format='ascii')
+    output_tab.write('visit_lst.csv',format='ascii',overwrite=True)
     return (output_tab,mjd_dict)
 
 def lst_plots(mjd_dict,startmjd,endmjd):
@@ -394,7 +419,7 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pp = PdfPages('visit_lst.pdf')
     
     #LST 1 hour visit
-    pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA")
+    pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA",edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -402,24 +427,28 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     #pl.savefig('lst_visit.png',dpi=400)
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Actual'))
+    pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Actual'))
     pp.savefig()
     pl.clf()
     
     #LST 1 hour visit by year
     (yrhst1,yrbins1) = np.histogram(mjd_dict['lsty1'],bins=24,range=(0,24))
     (yrhst2,yrbins2) = np.histogram(mjd_dict['lsty2'],bins=24,range=(0,24))
+    (yrhst3,yrbins3) = np.histogram(mjd_dict['lsty3'],bins=24,range=(0,24))
     (yrhst1_no,yrbins1) = np.histogram(mjd_dict['lsty1no2v'],bins=24,range=(0,24))
     (yrhst2_no,yrbins2) = np.histogram(mjd_dict['lsty2no2v'],bins=24,range=(0,24))
+    (yrhst3_no,yrbins3) = np.histogram(mjd_dict['lsty3no2v'],bins=24,range=(0,24))
     #Write the data out
     lstout = open('lstdist.txt','w')
-    lstout.write("#LST Proj_visit Yr1_Visit Yr2_visit Yr1_no2exp Yr2_no2exp\n")
+    lstout.write("#LST Proj_visit Yr1_Visit Yr2_Visit Yr3_Visit Yr1_no2exp Yr2_no2exp Yr3_visit_no2exp\n")
     for i in range(24):
-        lstout.write("{} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
-                                                  yrhst2[i],yrhst1_no[i],yrhst2_no[i]))
+        lstout.write("{} {} {} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
+                                                  yrhst2[i],yrhst3[i],yrhst1_no[i],yrhst2_no[i],yrhst3_no[i]))
     lstout.close()
     
-    pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2']],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
+    pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2'],mjd_dict['lsty3']],bins=24,range=(0,24),
+            stacked=True,color=["pink","#58ACFA",'lightgreen'],rwidth=1.0,edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -427,12 +456,15 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     #pl.savefig('lst_visit.png',dpi=400)
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Actual Year1', 'Actual Year2'))
+    pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Actual Year1', 'Actual Year2','Actual Year3'),
+              ncol=2, fontsize='small')
     pp.savefig()
     pl.clf()
     
     #LST 1 hour visit by year - 2exp visits
-    pl.hist([mjd_dict['lsty1no2v'],mjd_dict['lsty2no2v']],bins=24,range=(0,24),stacked=True,color=["pink","#58ACFA"],rwidth=1.0)
+    pl.hist([mjd_dict['lsty1no2v'],mjd_dict['lsty2no2v'],mjd_dict['lsty3no2v']],bins=24,range=(0,24),
+            stacked=True,color=["pink","#58ACFA",'lightgreen'],rwidth=1.0,edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits - 2 expsure visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -440,12 +472,14 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     #pl.savefig('lst_visit.png',dpi=400)
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Actual Year1', 'Actual Year2'))
+    pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3,','Actual Year1', 'Actual Year2', 'Actual Year3'),
+              fontsize='small')
     pp.savefig()
     pl.clf()
     
     #LST 20 minute bins
-    pl.hist(mjd_dict['lst'],bins=72,range=(0,24),color="#58ACFA")
+    pl.hist(mjd_dict['lst'],bins=72,range=(0,24),color="#58ACFA",edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (20 min bins)".format(date))
@@ -454,59 +488,22 @@ def lst_plots(mjd_dict,startmjd,endmjd):
 #    pp.savefig()
     pl.clf()
     cbins = m.ceil(mjddiff/15.0)
-    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
+    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA",edgecolor='black')
     pl.title("Current ({}) Number of Visits by MJD (15 day bins)".format(date))
     pl.xlabel("MJD")
     pl.ylabel("Number of visits")
     pl.xlim(56820,56820+((cbins+5)*15.0))
-    pp.savefig()
+    #pp.savefig()
     pl.clf()
     cbins = m.ceil(mjddiff/5.0)
-    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA")
+    pl.hist(mjd_dict['mjd'],bins=cbins,range=(startmjd,endmjd),color="#58ACFA",edgecolor='black')
     pl.title("Current ({}) Number of Visits by MJD (5 day bins)".format(date))
     pl.xlabel("MJD")
     pl.ylabel("Number of visits")
     pl.xlim(56820,56820+((cbins+15)*5.0))
-    pp.savefig()
+    #pp.savefig()
     pl.clf()
     
-    #Plot efficiency
-    odate = ['2014-07','2014-09','2014-10','2014-11','2014-12','2015-01','2015-02'
-                     ,'2015-03','2015-04','2015-05','2015-06','2015-07','2015-08'
-                     ,'2015-09','2015-10','2015-11','2015-12']
-                     
-    #Create Date Time format
-    wdate = [datetime.datetime.strptime(x,'%Y-%m') for x in odate]
-    weff = [36.74,25.73,70.81,21.18,43.95,29.75,69.00,49.73,66.95,52.36,24.53,34.72
-            ,46.52,53.97,41.73,57.30,27.81]
-
-    fig, ax = pl.subplots()
-    
-    ax.plot(wdate,weff,'o-')
-    mindate = min(wdate) - datetime.timedelta(days=15) 
-    maxdate = max(wdate) + datetime.timedelta(days=15) 
-    pl.plot((mindate,maxdate), (45,45))
-    pl.xlim(mindate,maxdate)
-    pl.ylim(0,100)
-    pl.title('Percent On-Sky Time by Date')
-    pl.ylabel("Percent On-Sky Time")
-    pl.legend(('Actual', 'Projected'))
-    
-    fig.autofmt_xdate()
-    
-#    pp.savefig()
-    
-#     pl.clf()
-#     pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA")
-#     pl.xlabel("LST")
-#     pl.ylabel("Number of visits")
-#     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
-#     #pl.xlim(-1,24)
-#     #pl.savefig('lst_visit.png',dpi=400)
-#     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
-#     pl.legend(('Planned','Actual'))
-#     pp.savefig()
-#     pp.savefig()
     
     pp.close()
 
@@ -645,7 +642,7 @@ def current_visits_main():
     cum_tab['complete'] = dbd_complete
     cum_tab['2vsn2'] = twovisitsn2_cum
    
-    cum_tab.write('mjd.hist',format='ascii')
+    cum_tab.write('mjd.hist',format='ascii',overwrite=True)
     
     print "Total APOGEE-led visits: {}".format(len(mjd_dict['mjd']))
     

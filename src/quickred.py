@@ -144,6 +144,8 @@ def current_sn(plate_tab,visit_tab,design_tab):
         if len(plate_visits_tab) == 0:
             visits_list.append(0)
             sn2_list.append(0.0)
+            qlsn2_list.append(0.0)
+            redsn2_list.append(0.0)
             complete_list.append(0.0)
             mjd_list.append('')
         else:
@@ -175,14 +177,13 @@ def current_sn(plate_tab,visit_tab,design_tab):
             complete_list.append(0.0)
             mjd_list.append(','.join(plate_mjd))   
         
-        
         #Deal with going arcross 360 / 0
         lst = (plate_tab['center_ra'][plate] + plate_tab['hour_angle'][plate])/15.0
         if (lst > 24.0): lst = lst - 24
         if (lst < 0.0): lst = lst + 24
         
         lst_list.append(round(lst,4))
-        
+      
     output_tab = Table()
      
     #Make output table
@@ -290,7 +291,27 @@ def temporal_sn(comb_tab,visit_tab):
             plate_qlsn2 = visit_tab['qlsum'][visit]
         
         mjd_dict['sn2'].append(plate_sn2)      
-
+        mjd_dict['qlsn2'].append(plate_qlsn2)      
+        mjd_dict['redsn2'].append(plate_redsn2)
+        
+    output_tab = Table()
+    
+    #Create a single loc_id+cohort
+    loc_cohort_list = ["{}_{}".format(a_, b_) 
+                       for a_, b_ in zip(mjd_dict['loc_id'],mjd_dict['cohort'])]
+     
+    output_tab['plate_id'] = mjd_dict['plate'] 
+    output_tab['loc_cohort'] = loc_cohort_list
+    output_tab['mjd'] = mjd_dict['mjd'] 
+    #output_tab['lst'] = mjd_dict['lst']
+    output_tab['sn2'] = mjd_dict['sn2'] 
+    output_tab['qlsn2'] = mjd_dict['qlsn2'] 
+    output_tab['redsn2'] = mjd_dict['redsn2'] 
+    
+    
+    #Write out table
+    output_tab.write('sn_visit_lst.csv',format='ascii',overwrite=True)
+    return (output_tab,mjd_dict)      
         
 # -------------
 # Main Function
@@ -309,6 +330,44 @@ def quickred_main():
     
     #Make Plot
     pp = PdfPages('quickred.pdf')
+    
+    good_mjd = mjd_tab[(mjd_tab['qlsn2'] > 0) & (mjd_tab['redsn2'] > 0 ) & (mjd_tab['qlsn2'] < 10000)]
+    
+    pl.plot(good_mjd['qlsn2'],good_mjd['redsn2'],'.')
+    pl.plot([0,10000],[0,10000])
+    pl.xlabel('Quicklook SN2')
+    pl.ylabel('Red SN2')
+    pl.title("Since Start of Survey")
+    pp.savefig()
+    pl.clf()
+    
+    pl.plot(good_mjd['mjd'],(good_mjd['redsn2']-good_mjd['qlsn2'])/good_mjd['redsn2'],'.')
+    pl.xlabel('MJD')
+    pl.ylabel('(SN2 Red - Quickred)/SN2 Red')
+    pl.ylim((-1,1))
+    pl.title("Since Start of Survey")
+    pp.savefig()
+    pl.clf()
+    
+    #For the most recent days
+    good_recent = good_mjd[(good_mjd['mjd'] > 57600)]
+    
+    pl.plot(good_recent['qlsn2'],good_recent['redsn2'],'.')
+    pl.plot([0,10000],[0,10000])
+    pl.xlabel('Quicklook SN2')
+    pl.ylabel('Red SN2')
+    pl.title("Since Aug 2016 of Survey")
+    pp.savefig()
+    pl.clf()
+    
+    pl.plot(good_recent['mjd'],(good_recent['redsn2']-good_recent['qlsn2'])/good_recent['redsn2'],'.')
+    pl.xlabel('MJD')
+    pl.ylabel('(SN2 Red - Quickred)/SN2 Red')
+    pl.title("Since Aug 2016 of Survey")
+    pl.ylim((-1,1))
+    pp.savefig()
+    pl.clf()
+    
     
     pp.close()
 
