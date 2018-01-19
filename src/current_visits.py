@@ -570,7 +570,6 @@ def current_visits_main():
     dbd_sn2corr = list()
     dbd_complete = list()
     
-    #mytest = open('test.txt','w')
     for mjd in range(startmjd,endmjd):
         
         #Store Date
