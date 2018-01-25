@@ -73,10 +73,13 @@ def read_proj():
     print("Proj Table Read Done")
     return(mytable)
 
-def read_master():
-    #Create Table
-    #mytable = Table.read('../schedule/Sch_base.Aug16.RM_ELG.txt',format='ascii')
-    mytable = Table.read('../schedule/Sched_LCO_base18.full.txt',format='ascii')
+def read_master(south=False):
+    #Create Table    
+    if (south):
+        mytable = Table.read('../schedule/Sched_LCO_base18.full.txt',format='ascii')
+    else:
+        mytable = Table.read('../schedule/Sch_base.Aug16.RM_ELG.txt',format='ascii')
+    
     print("Read MasterTable Read Done")
     return(mytable)
 

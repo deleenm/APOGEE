@@ -518,7 +518,7 @@ def lst_plots(mjd_dict,startmjd,endmjd):
 # -------------
 # Main Function
 # -------------
-def current_visits_main():
+def current_visits_main(south=False):
     
     #Read plates file
     plate_tab = read_plates()
@@ -533,8 +533,11 @@ def current_visits_main():
     
     #Get the most recent data
     smjd_list = sorted(mjd_dict['mjd'])
-    #startmjd = smjd_list[0]
-    startmjd = 56840
+    if (south):
+        #startmjd = 57700
+        startmjd = smjd_list[0]
+    else:
+        startmjd = 56840
     endmjd = smjd_list[-1] + 1
     mjddiff = endmjd - startmjd
     
@@ -657,11 +660,12 @@ def current_visits_main():
     return(0)
 
 if __name__ == '__main__':
-#    parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
-#    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
-#    args = vars(parser.parse_args())
-#    ret = current_visits_main(south=args['s'])
-    ret = current_visits_main()
+    parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
+    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    args = vars(parser.parse_args())
+    print(args)
+    ret = current_visits_main(south=args['south'])
+#    ret = current_visits_main()
     sys.exit(ret)
     
 ##
