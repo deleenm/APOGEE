@@ -39,25 +39,25 @@ import astropy as astpy
 def read_apogee():
     #Create Table
     mytable = Table.read('../apogeeled.csv',format='ascii')
-    print "APOGEE Table Read Done"
+    print("APOGEE Table Read Done")
     return(mytable)
 
 def read_plate_visits():
     #Create Table
     mytable = Table.read('../plate_visits.csv',format='ascii')
-    print "Plate Visits Table Read Done"
+    print("Plate Visits Table Read Done")
     return(mytable)
 
 def read_manga():
     #Create Table
     mytable = Table.read('../mangaled.csv',format='ascii')
-    print "MaNGA Table Read Done"
+    print("MaNGA Table Read Done")
     return(mytable)
 
 def read_mjd():
     #Create Table
     mytable = Table.read('../mjd.hist',format='ascii')
-    print "MJD Table Read Done"
+    print("MJD Table Read Done")
 
     #Get date from final MJD
     endmjd = (np.sort(mytable['mjd']))[-1]
@@ -70,19 +70,20 @@ def read_mjd():
 def read_proj():
     #Create Table
     mytable = Table.read('../proj.txt',format='ascii')
-    print "Proj Table Read Done"
+    print("Proj Table Read Done")
     return(mytable)
 
 def read_master():
     #Create Table
-    mytable = Table.read('../schedule/Sch_base.Aug16.RM_ELG.txt',format='ascii')
-    print "Read MasterTable Read Done"
+    #mytable = Table.read('../schedule/Sch_base.Aug16.RM_ELG.txt',format='ascii')
+    mytable = Table.read('../schedule/Sched_LCO_base18.full.txt',format='ascii')
+    print("Read MasterTable Read Done")
     return(mytable)
 
 def read_weather():
     #Create Table
     mytable = Table.read('../weather.txt',format='ascii')
-    print "Read Weather Table Read Done"
+    print("Read Weather Table Read Done")
     return(mytable)
 
 

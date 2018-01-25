@@ -22,6 +22,7 @@ import datetime
 # -------------------
 # Third-party imports
 # -------------------
+import argparse
 import astropy.table
 from astropy.table import Table
 from astropy.time import Time
@@ -31,9 +32,6 @@ import os.path
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import astropy as astpy
-from scipy.cluster._hierarchy import cluster_dist
-from boto.dynamodb.condition import NULL
-from _sqlite3 import Row
 # -----------------
 # Class Definitions
 # -----------------
@@ -72,26 +70,26 @@ def calculateSnCompletion(vplan, sn):
 def read_design():
     #Create Table
     mytable = Table.read('../design.csv',delimiter='|')
-    print "Design Table Read Done"
+    print("Design Table Read Done")
     return(mytable)
 
 def read_plates():
     #Create Table
     mytable = Table.read('../plates.csv',delimiter='|')
-    print "Plates Table Read Done"
+    print("Plates Table Read Done")
     #Note current_survey_mode Null or 1 APOGEE-led 2 or 3 MaNGA-led
     return(mytable)
     
 def read_visits():
     #Create Table
     mytable = Table.read('../visits.csv',delimiter='|')
-    print "Visits Table Read Done"
+    print("Visits Table Read Done")
     return(mytable)
 
 def read_planned():
     #Create Table
     mytable = Table.read('../planned_visits.csv',format='ascii')
-    print "Planned Visits Table Read Done"
+    print("Planned Visits Table Read Done")
     return(mytable)
 
 def current_planned(plate_tab,visit_tab,design_tab):
@@ -121,6 +119,16 @@ def current_planned(plate_tab,visit_tab,design_tab):
         #Get rid of MaNGA-led plates
         if (not (plate_tab['current_survey_mode_pk'][plate] is np.ma.masked 
                  or plate_tab['current_survey_mode_pk'][plate] == 1)):
+            continue
+        
+        #Get rid of commissioning plates
+        if (plate_tab['location_id'][plate] == -1):
+            print("Plateid {} is a commissioning plate. Ignoring...".format(plate_tab['plate_id'][plate]))
+            continue
+        
+        #Get rid of early plates
+        if (plate_tab['plate_id'][plate] < 9280 and plate_tab['plate_id'][plate] >= 9265 ):
+            print("Plateid {} is an early plate. Ignoring...".format(plate_tab['plate_id'][plate]))
             continue
         
         plate_list.append(plate_tab['plate_id'][plate])
@@ -643,12 +651,16 @@ def current_visits_main():
    
     cum_tab.write('../mjd.hist',format='ascii',overwrite=True)
     
-    print "Total APOGEE-led visits: {}".format(len(mjd_dict['mjd']))
+    print("Total APOGEE-led visits: {}".format(len(mjd_dict['mjd'])))
     
-    print "Success!"
+    print("Success!")
     return(0)
 
 if __name__ == '__main__':
+#    parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
+#    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+#    args = vars(parser.parse_args())
+#    ret = current_visits_main(south=args['s'])
     ret = current_visits_main()
     sys.exit(ret)
     
