@@ -1,1 +1,163 @@
-/home/deleenm/apogee/LCO/query.txt
+#01/25/2018
+#Added Temperature and exposure time
+#plates.csv
+SELECT plt.location_id, ptg.center_ra, ptg.center_dec, plt.plate_id, pltg.hour_angle, pltg.priority, plt.design_pk, plt.name, pltg.ha_observable_max, pltg.ha_observable_min, plt.pk, plt.current_survey_mode_pk, ploc.label,plt.temperature
+FROM (((((((platedb.plate AS plt
+INNER JOIN platedb.plate_to_survey AS p2s ON (p2s.plate_pk = plt.pk)) 
+INNER JOIN platedb.survey AS surv ON (p2s.survey_pk = surv.pk)) 
+INNER JOIN platedb.plate_pointing AS pltg ON (pltg.plate_pk=plt.pk)) 
+INNER JOIN platedb.pointing AS ptg ON (pltg.pointing_pk=ptg.pk)) 
+INNER JOIN platedb.plate_location AS ploc ON (ploc.pk=plt.plate_location_pk)) 
+INNER JOIN platedb.plate_to_plate_status AS p2ps ON (p2ps.plate_pk=plt.pk)) 
+INNER JOIN platedb.plate_status AS plts ON (plts.pk=p2ps.plate_status_pk))
+WHERE surv.label='APOGEE-2S' 
+      AND (plts.label = 'Accepted' OR plts.label = 'Retired')
+ORDER BY plt.plate_id
+
+#visits.csv (added exposure time)
+SELECT plt.plate_id, FLOOR(exp.start_time/86400) AS mjd, sum(qr.snr_standard^2.0) AS qlsum, count(qr.snr_standard) AS qlcount, sum(apr.snr^2.0) AS redsum, count(apr.snr) AS redcount, sum(exp.exposure_time) AS exptime
+FROM (((((((platedb.exposure AS exp
+INNER JOIN platedb.survey as surv ON (exp.survey_pk = surv.pk))
+LEFT JOIN apogeeqldb.quickred AS qr ON (exp.pk=qr.exposure_pk))
+LEFT JOIN apogeeqldb.reduction AS apr ON (exp.pk=apr.exposure_pk))
+LEFT JOIN platedb.exposure_flavor AS expf ON (expf.pk=exp.exposure_flavor_pk))
+LEFT JOIN platedb.observation AS obs ON (exp.observation_pk=obs.pk))
+LEFT JOIN platedb.plate_pointing AS pltg ON (obs.plate_pointing_pk=pltg.pk))
+RIGHT JOIN platedb.plate AS plt ON (pltg.plate_pk=plt.pk))
+WHERE expf.label='Object' AND (qr.snr_standard >= 10.0 OR apr.snr >= 10.0)
+GROUP BY plt.plate_id, FLOOR(exp.start_time/86400) 
+ORDER BY plt.plate_id
+
+#design.csv
+#Changed to give all design information (apogee_survey_mode)
+SELECT plate_id,array_to_string(array_agg(dv.value ORDER BY dv.design_field_pk),',') 
+FROM platedb.plate
+INNER JOIN platedb.design_value AS dv ON (plate.design_pk = dv.design_pk)
+WHERE (dv.design_field_pk=61 OR dv.design_field_pk=62 
+      			      OR dv.design_field_pk=63 
+			      OR dv.design_field_pk=71 
+			      OR dv.design_field_pk=72 
+			      OR dv.design_field_pk=73
+			      OR dv.design_field_pk=74
+			      OR dv.design_field_pk=83
+) 
+GROUP BY plate_id
+ORDER BY plate_id
+
+#Translation table
+APO;LCO;name
+342;61;"apogee_short_version"
+343;62;"apogee_long_version"
+344;63;"apogee_med_version"
+351;71;"apogee_n_design_visits"
+423;72;"apogee_design_type"
+424;73;"apogee_design_driver"
+440;74;"apogee_exposure_time"
+None;83;"apogee_survey_mode"
+
+#Note plates 9265 - 9279 are missing pks > 59
+
+#01/19/2018
+#Added Temperature and exposure time
+#plates.csv
+SELECT plt.location_id, ptg.center_ra, ptg.center_dec, plt.plate_id, pltg.hour_angle, pltg.priority, plt.design_pk, plt.name, pltg.ha_observable_max, pltg.ha_observable_min, plt.pk, plt.current_survey_mode_pk, ploc.label,plt.temperature
+FROM (((((((platedb.plate AS plt
+INNER JOIN platedb.plate_to_survey AS p2s ON (p2s.plate_pk = plt.pk)) 
+INNER JOIN platedb.survey AS surv ON (p2s.survey_pk = surv.pk)) 
+INNER JOIN platedb.plate_pointing AS pltg ON (pltg.plate_pk=plt.pk)) 
+INNER JOIN platedb.pointing AS ptg ON (pltg.pointing_pk=ptg.pk)) 
+INNER JOIN platedb.plate_location AS ploc ON (ploc.pk=plt.plate_location_pk)) 
+INNER JOIN platedb.plate_to_plate_status AS p2ps ON (p2ps.plate_pk=plt.pk)) 
+INNER JOIN platedb.plate_status AS plts ON (plts.pk=p2ps.plate_status_pk))
+WHERE surv.label='APOGEE-2S' 
+      AND (plts.label = 'Accepted' OR plts.label = 'Retired')
+ORDER BY plt.plate_id
+
+#visits.csv (added exposure time)
+SELECT plt.plate_id, FLOOR(exp.start_time/86400) AS mjd, sum(qr.snr_standard^2.0) AS qlsum, count(qr.snr_standard) AS qlcount, sum(apr.snr^2.0) AS redsum, count(apr.snr) AS redcount, sum(exp.exposure_time) AS exptime
+FROM (((((((platedb.exposure AS exp
+INNER JOIN platedb.survey as surv ON (exp.survey_pk = surv.pk))
+LEFT JOIN apogeeqldb.quickred AS qr ON (exp.pk=qr.exposure_pk))
+LEFT JOIN apogeeqldb.reduction AS apr ON (exp.pk=apr.exposure_pk))
+LEFT JOIN platedb.exposure_flavor AS expf ON (expf.pk=exp.exposure_flavor_pk))
+LEFT JOIN platedb.observation AS obs ON (exp.observation_pk=obs.pk))
+LEFT JOIN platedb.plate_pointing AS pltg ON (obs.plate_pointing_pk=pltg.pk))
+RIGHT JOIN platedb.plate AS plt ON (pltg.plate_pk=plt.pk))
+WHERE expf.label='Object' AND (qr.snr_standard >= 10.0 OR apr.snr >= 10.0)
+GROUP BY plt.plate_id, FLOOR(exp.start_time/86400) 
+ORDER BY plt.plate_id
+
+#design.csv
+#Changed to give all design information
+SELECT plate_id,array_to_string(array_agg(dv.value ORDER BY dv.design_field_pk),',') 
+FROM platedb.plate
+INNER JOIN platedb.design_value AS dv ON (plate.design_pk = dv.design_pk)
+WHERE (dv.design_field_pk=61 OR dv.design_field_pk=62 
+      			      OR dv.design_field_pk=63 
+			      OR dv.design_field_pk=71 
+			      OR dv.design_field_pk=72 
+			      OR dv.design_field_pk=73
+			      OR dv.design_field_pk=74
+) 
+GROUP BY plate_id
+ORDER BY plate_id
+
+#Translation table
+APO;LCO;name
+342;61;"apogee_short_version"
+343;62;"apogee_long_version"
+344;63;"apogee_med_version"
+351;71;"apogee_n_design_visits"
+423;72;"apogee_design_type"
+424;73;"apogee_design_driver"
+440;74;"apogee_exposure_time"
+
+
+#05/30/2017
+#plates.csv
+SELECT plt.location_id, ptg.center_ra, ptg.center_dec, plt.plate_id, pltg.hour_angle, pltg.priority, plt.design_pk, plt.name, pltg.ha_observable_max, pltg.ha_observable_min, plt.pk, plt.current_survey_mode_pk, ploc.label
+FROM (((((((platedb.plate AS plt
+INNER JOIN platedb.plate_to_survey AS p2s ON (p2s.plate_pk = plt.pk)) 
+INNER JOIN platedb.survey AS surv ON (p2s.survey_pk = surv.pk)) 
+INNER JOIN platedb.plate_pointing AS pltg ON (pltg.plate_pk=plt.pk)) 
+INNER JOIN platedb.pointing AS ptg ON (pltg.pointing_pk=ptg.pk)) 
+INNER JOIN platedb.plate_location AS ploc ON (ploc.pk=plt.plate_location_pk)) 
+INNER JOIN platedb.plate_to_plate_status AS p2ps ON (p2ps.plate_pk=plt.pk)) 
+INNER JOIN platedb.plate_status AS plts ON (plts.pk=p2ps.plate_status_pk))
+WHERE surv.label='APOGEE-2S' 
+      AND (plts.label = 'Accepted' OR plts.label = 'Retired')
+ORDER BY plt.plate_id
+
+#visits.csv (added exposure time)
+SELECT plt.plate_id, FLOOR(exp.start_time/86400) AS mjd, sum(qr.snr_standard^2.0) AS qlsum, count(qr.snr_standard) AS qlcount, sum(apr.snr^2.0) AS redsum, count(apr.snr) AS redcount, sum(exp.exposure_time) AS exptime
+FROM (((((((platedb.exposure AS exp
+INNER JOIN platedb.survey as surv ON (exp.survey_pk = surv.pk))
+LEFT JOIN apogeeqldb.quickred AS qr ON (exp.pk=qr.exposure_pk))
+LEFT JOIN apogeeqldb.reduction AS apr ON (exp.pk=apr.exposure_pk))
+LEFT JOIN platedb.exposure_flavor AS expf ON (expf.pk=exp.exposure_flavor_pk))
+LEFT JOIN platedb.observation AS obs ON (exp.observation_pk=obs.pk))
+LEFT JOIN platedb.plate_pointing AS pltg ON (obs.plate_pointing_pk=pltg.pk))
+RIGHT JOIN platedb.plate AS plt ON (pltg.plate_pk=plt.pk))
+WHERE expf.label='Object' AND (qr.snr_standard >= 10.0 OR apr.snr >= 10.0)
+GROUP BY plt.plate_id, FLOOR(exp.start_time/86400) 
+ORDER BY plt.plate_id
+
+#design.csv
+SELECT plate_id,array_to_string(array_agg(dv.value ORDER BY dv.design_field_pk),',') 
+FROM platedb.plate
+INNER JOIN platedb.design_value AS dv ON (plate.design_pk = dv.design_pk)
+WHERE (dv.design_field_pk=61 OR dv.design_field_pk=62 
+      			      OR dv.design_field_pk=63 
+			      OR dv.design_field_pk=71 
+			      OR dv.design_field_pk=72 
+			      OR dv.design_field_pk=73) 
+GROUP BY plate_id
+ORDER BY plate_id
+
+APO;LCO;name
+342;61;"apogee_short_version"
+343;62;"apogee_long_version"
+344;63;"apogee_med_version"
+351;71;"apogee_n_design_visits"
+423;72;"apogee_design_type"
+424;73;"apogee_design_driver"
