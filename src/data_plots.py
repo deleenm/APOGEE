@@ -21,6 +21,7 @@ import datetime
 # -------------------
 # Third-party imports
 # -------------------
+import argparse
 from astropy.table import Table
 from astropy.time import Time
 import matplotlib.pyplot as pl
@@ -90,13 +91,13 @@ def read_weather():
     return(mytable)
 
 
-def master_proj(startmjd=0.0,endmjd=None,withmeng=False,pergood=0.45):
+def master_proj(startmjd=0.0,endmjd=None,withmeng=False,pergood=0.45,south=False):
     
     mjd_list = list()
     aptime_list = list()
     mantime_list = list()
     
-    master_tab = read_master()
+    master_tab = read_master(south=south)
     
     #Use specified date range
     if(endmjd != None):
@@ -111,6 +112,10 @@ def master_proj(startmjd=0.0,endmjd=None,withmeng=False,pergood=0.45):
             engint = 2
         else:
             engint = 1
+        if(south == True):
+            if(master_tab['Lead'][row] != 1):
+                aptime_list.append(0)
+                continue
         
         if(master_tab['Eng'][row] <= engint):
             bright_time = master_tab['MJD_end_bright'][row] - master_tab['MJD_start_bright'][row]
@@ -194,9 +199,13 @@ def combined_plot(pp):
     pp.savefig()
     pl.clf()
 
-def apogee_proj(pp):
+def apogee_proj(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
-    projtab = master_proj(endmjd=endmjd)
+    
+    if(south):
+        projtab = master_proj(endmjd=endmjd,south=south,pergood=.70)
+    else:
+        projtab = master_proj(endmjd=endmjd,south=south)
     
     print("Total Visits: {}".format(mjdtab['cum'][-1]))
     print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
@@ -212,12 +221,16 @@ def apogee_proj(pp):
     pp.savefig()
     pl.clf()
     
-def apogee_sn2(pp):
+def apogee_sn2(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
-    projtab = master_proj(endmjd=endmjd)
-    mprojtab = master_proj(endmjd=endmjd,withmeng=True)
-    gprojtab = master_proj(endmjd=endmjd,pergood=0.50)
-    gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50)
+    
+    if(south):
+        projtab = master_proj(endmjd=endmjd,south=south,pergood=0.70)
+    else:
+        projtab = master_proj(endmjd=endmjd,south=south)
+        mprojtab = master_proj(endmjd=endmjd,withmeng=True,south=south)
+        gprojtab = master_proj(endmjd=endmjd,pergood=0.50,south=south)
+        gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50,south=south)
     
     print("Total Visits: {}".format(mjdtab['cum'][-1]))
     print("Total SN2 Visits: {}".format(round(mjdtab['sn2'][-1])))
@@ -225,22 +238,27 @@ def apogee_sn2(pp):
     print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
     print("Total Short Vistis: {}".format(round(mjdtab['2vsn2'][-1])))
     print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
-    print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
+    if(not south):
+        print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
+        print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
+        print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
 
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sn2'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sn2corr'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['complete'],linewidth=2.0)
     pl.plot(projtab['mjd'],projtab['apvisits_cum'],'--',linewidth=2.0)
-    pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
+    if(not south):
+        pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
     
     pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
-    pl.legend(('Visits','SN2 Visits','SN2corr Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
-    pl.savefig('test.png')
+    if(south):
+        pl.legend(('Visits','SN2 Visits','SN2corr Visits','Plate Complete','Projected'),loc=2)
+    else:
+        pl.legend(('Visits','SN2 Visits','SN2corr Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
+    #pl.savefig('test.png')
     pp.savefig()
     pl.clf()
 
@@ -312,34 +330,42 @@ def apogee_sn2(pp):
     pp.savefig()
     pl.clf()
 
-def standard_plot(pp):
+def standard_plot(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
-    projtab = master_proj(endmjd=endmjd)
-    mprojtab = master_proj(endmjd=endmjd,withmeng=True)
-    gprojtab = master_proj(endmjd=endmjd,pergood=0.50)
-    gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50)
+    if(south):
+        projtab = master_proj(endmjd=endmjd,south=south,pergood=0.70)
+    else:
+        projtab = master_proj(endmjd=endmjd,south=south)
+        mprojtab = master_proj(endmjd=endmjd,withmeng=True,south=south)
+        gprojtab = master_proj(endmjd=endmjd,pergood=0.50,south=south)
+        gmprojtab = master_proj(endmjd=endmjd,withmeng=True,pergood=0.50,south=south)
     
     print("Total Visits: {}".format(mjdtab['cum'][-1]))
     print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
     print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
-    print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
-    print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
+    if(not south):
+        print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
+        print("Total Projected Visits (50%): {}".format(round(gprojtab['apvisits_cum'][-1])))
+        print("Total Projected with Eng Visits (50%): {}".format(round(gmprojtab['apvisits_cum'][-1])))
 
     pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['complete'],linewidth=2.0)
     pl.plot(projtab['mjd'],projtab['apvisits_cum'],'--',linewidth=2.0)
-    pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
+    if(not south):
+        pl.plot(projtab['mjd'],mprojtab['apvisits_cum'],'--',linewidth=2.0)
     
     pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
-    pl.legend(('Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
+    if(south):
+        pl.legend(('Visits','Plate Complete','Projected'),loc=2)
+    else:
+        pl.legend(('Visits','Plate Complete','Projected', 'Projected with Eng'),loc=2)
     pl.savefig('test.png')
     pp.savefig()
     pl.clf()    
 
-def apogee_type(pp):
+def apogee_type(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
     #projtab = read_proj()
     
@@ -402,23 +428,31 @@ def weather_plot(pp):
 # -------------
 # Main Function
 # -------------
-def data_plots_main():
+def data_plots_main(south=False):
 
+    #North or South
+    if(south == False):
+        print("Running in Northern mode")
+    else:
+        print("Running in Southern mode")
     
     pp = PdfPages('../progress.pdf')
     #plate_windows(pp)
     #pp = PdfPages('progress.pdf')
     #combined_plot(pp) #Not up to date.
-    apogee_proj(pp)
+    apogee_proj(pp,south=south)
     apogee_type(pp)
-    #apogee_sn2(pp)
-    standard_plot(pp)
+    #apogee_sn2(pp,south=south)
+    standard_plot(pp,south=south)
     weather_plot(pp)
     pp.close()
     print("Complete!")
 
 if __name__ == '__main__':
-    data_plots_main()
+    parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
+    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    args = vars(parser.parse_args())
+    data_plots_main(args['south'])
     
 ##
 #@mainpage

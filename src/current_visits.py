@@ -92,7 +92,7 @@ def read_planned():
     print("Planned Visits Table Read Done")
     return(mytable)
 
-def current_planned(plate_tab,visit_tab,design_tab):
+def current_planned(plate_tab,visit_tab,design_tab,south=False):
     plate_list = list()
     name_list = list()
     design_list = list()
@@ -121,15 +121,50 @@ def current_planned(plate_tab,visit_tab,design_tab):
                  or plate_tab['current_survey_mode_pk'][plate] == 1)):
             continue
         
-        #Get rid of commissioning plates
-        if (plate_tab['location_id'][plate] == -1):
-            print("Plateid {} is a commissioning plate. Ignoring...".format(plate_tab['plate_id'][plate]))
-            continue
+        if(south):
+            #Get rid of commissioning plates
+            if (plate_tab['location_id'][plate] == -1):
+                print("Plateid {} is a commissioning plate. Ignoring...".format(plate_tab['plate_id'][plate]))
+                continue
         
-        #Get rid of early plates
-        if (plate_tab['plate_id'][plate] < 9280 and plate_tab['plate_id'][plate] >= 9265 ):
-            print("Plateid {} is an early plate. Ignoring...".format(plate_tab['plate_id'][plate]))
-            continue
+            #Get rid of early plates
+            if (plate_tab['plate_id'][plate] < 9280 and plate_tab['plate_id'][plate] >= 9265 ):
+                print("Plateid {} has truncated design info. Ignoring...".format(plate_tab['plate_id'][plate]))
+                continue
+        
+        #Search for design information
+        thisdesign = design_tab[(design_tab['plate_id'] == plate_tab['plate_id'][plate])]
+
+        if (len(thisdesign) == 0):
+            print("Plate: {} is missing a design!".format(plate_tab['plate_id'][plate]))
+            sys.exit()
+        
+        #cohort
+        tmp = thisdesign['array_to_string'][0].split(',')
+        #Get rid of external plates
+        if(south):
+            if(int(tmp[0]) < 0):
+                continue
+            if(len(tmp) == 8):
+                if(tmp[7] != 'Main'):
+                    continue
+            else:
+                if(tmp[6] != 'Main'):
+                    continue
+        
+        cohort_list.append(100*int(tmp[0]) + 10*int(tmp[2]) + int(tmp[1]))
+        planned_list.append(int(tmp[3]))
+        type_list.append(tmp[4])
+        if(south):
+            if (len(tmp) == 8):
+                exptime_list.append(tmp[6])
+            else:
+                exptime_list.append(500)
+        else:
+            if (len(tmp) == 7):
+                exptime_list.append(tmp[6])
+            else:
+                exptime_list.append(500)
         
         plate_list.append(plate_tab['plate_id'][plate])
         name_list.append(plate_tab['name'][plate])
@@ -142,24 +177,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
         
         design_list.append(plate_tab['design_pk'][plate])
         ploc_list.append(plate_tab['label'][plate])
-        temp_list.append(plate_tab['temperature'][plate])
-        
-        #Search for design information
-        thisdesign = design_tab[(design_tab['plate_id'] == plate_tab['plate_id'][plate])]
-
-        if (len(thisdesign) == 0):
-            print("Plate: {} is missing a design!".format(plate_tab['plate_id'][plate]))
-            sys.exit()
-        
-        #cohort
-        tmp = thisdesign['array_to_string'][0].split(',')
-        cohort_list.append(100*int(tmp[0]) + 10*int(tmp[2]) + int(tmp[1]))
-        planned_list.append(int(tmp[3]))
-        type_list.append(tmp[4])
-        if (len(tmp) == 7):
-            exptime_list = tmp[6]
-        else:
-            exptime_list = 500
+        temp_list.append(plate_tab['temperature'][plate])        
         
         #Search for visit info    
         plate_visits_tab = visit_tab[(visit_tab['plate_id'] == plate_tab['plate_id'][plate])]
@@ -198,8 +216,7 @@ def current_planned(plate_tab,visit_tab,design_tab):
         
         lst_list.append(round(lst,4))
         
-    output_tab = Table()
-     
+    output_tab = Table() 
     #Make output table
     output_tab['plate_id'] = plate_list
     output_tab['field'] = name_list
@@ -520,6 +537,12 @@ def lst_plots(mjd_dict,startmjd,endmjd):
 # -------------
 def current_visits_main(south=False):
     
+    #North or South
+    if(south == False):
+        print("Running in Northern mode")
+    else:
+        print("Running in Southern mode")
+    
     #Read plates file
     plate_tab = read_plates()
     #Read visits file
@@ -527,7 +550,7 @@ def current_visits_main(south=False):
     #Read design file
     design_tab = read_design()
     
-    comb_tab = current_planned(plate_tab,visit_tab,design_tab)
+    comb_tab = current_planned(plate_tab,visit_tab,design_tab,south=south)
     
     (mjd_tab,mjd_dict) = temporal_change(comb_tab,visit_tab)
     
@@ -663,9 +686,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
     parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
     args = vars(parser.parse_args())
-    print(args)
     ret = current_visits_main(south=args['south'])
-#    ret = current_visits_main()
     sys.exit(ret)
     
 ##
