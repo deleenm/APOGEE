@@ -1,5 +1,4 @@
-#01/25/2018
-#Added Temperature and exposure time
+#01/28/2018
 #plates.csv
 SELECT plt.location_id, ptg.center_ra, ptg.center_dec, plt.plate_id, pltg.hour_angle, pltg.priority, plt.design_pk, plt.name, pltg.ha_observable_max, pltg.ha_observable_min, plt.pk, plt.current_survey_mode_pk, ploc.label,plt.temperature
 FROM (((((((platedb.plate AS plt
@@ -14,8 +13,8 @@ WHERE surv.label='APOGEE-2S'
       AND (plts.label = 'Accepted' OR plts.label = 'Retired')
 ORDER BY plt.plate_id
 
-#visits.csv (added exposure time)
-SELECT plt.plate_id, FLOOR(exp.start_time/86400) AS mjd, sum(qr.snr_standard^2.0) AS qlsum, count(qr.snr_standard) AS qlcount, sum(apr.snr^2.0) AS redsum, count(apr.snr) AS redcount, sum(exp.exposure_time) AS exptime
+#visits.csv (Converted MJD to SJD = MJD + 0.3)
+SELECT plt.plate_id, FLOOR((exp.start_time/86400)+0.3) AS mjd, sum(qr.snr_standard^2.0) AS qlsum, count(qr.snr_standard) AS qlcount, sum(apr.snr^2.0) AS redsum, count(apr.snr) AS redcount, sum(exp.exposure_time) AS exptime
 FROM (((((((platedb.exposure AS exp
 INNER JOIN platedb.survey as surv ON (exp.survey_pk = surv.pk))
 LEFT JOIN apogeeqldb.quickred AS qr ON (exp.pk=qr.exposure_pk))
@@ -25,11 +24,10 @@ LEFT JOIN platedb.observation AS obs ON (exp.observation_pk=obs.pk))
 LEFT JOIN platedb.plate_pointing AS pltg ON (obs.plate_pointing_pk=pltg.pk))
 RIGHT JOIN platedb.plate AS plt ON (pltg.plate_pk=plt.pk))
 WHERE expf.label='Object' AND (qr.snr_standard >= 10.0 OR apr.snr >= 10.0)
-GROUP BY plt.plate_id, FLOOR(exp.start_time/86400) 
+GROUP BY plt.plate_id, FLOOR((exp.start_time/86400)+0.3) 
 ORDER BY plt.plate_id
 
 #design.csv
-#Changed to give all design information (apogee_survey_mode)
 SELECT plate_id,array_to_string(array_agg(dv.value ORDER BY dv.design_field_pk),',') 
 FROM platedb.plate
 INNER JOIN platedb.design_value AS dv ON (plate.design_pk = dv.design_pk)

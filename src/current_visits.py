@@ -86,9 +86,12 @@ def read_visits():
     print("Visits Table Read Done")
     return(mytable)
 
-def read_planned():
+def read_planned(south=False):
     #Create Table
-    mytable = Table.read('../planned_visits.csv',format='ascii')
+    if(south):
+        mytable = Table.read('../planned_visits_south.csv',format='ascii')
+    else:    
+        mytable = Table.read('../planned_visits_north.csv',format='ascii')
     print("Planned Visits Table Read Done")
     return(mytable)
 
@@ -287,6 +290,7 @@ def temporal_change(comb_tab,visit_tab):
     mjd_dict['lsty1'] = list()
     mjd_dict['lsty2'] = list()
     mjd_dict['lsty3'] = list()
+    mjd_dict['lsty4'] = list()
     mjd_dict['anc'] = list()
     mjd_dict['apok'] = list()
     mjd_dict['bulge'] = list()
@@ -304,10 +308,12 @@ def temporal_change(comb_tab,visit_tab):
     mjd_dict['2vlsty1'] = list()
     mjd_dict['2vlsty2'] = list()
     mjd_dict['2vlsty3'] = list()
+    mjd_dict['2vlsty4'] = list()
     mjd_dict['lstno2v'] = list()
     mjd_dict['lsty1no2v'] = list()
     mjd_dict['lsty2no2v'] = list()
     mjd_dict['lsty3no2v'] = list()
+    mjd_dict['lsty4no2v'] = list()
         
     for visit in range(len(visit_tab)):
         #Determine whether the visit is good
@@ -371,8 +377,10 @@ def temporal_change(comb_tab,visit_tab):
             mjd_dict['lsty1'].append(lst)
         elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
             mjd_dict['lsty2'].append(lst)
+        elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                    mjd_dict['lsty3'].append(lst)                
         else:
-            mjd_dict['lsty3'].append(lst)
+            mjd_dict['lsty4'].append(lst)
             
         #Deal with 2visit LST
         if(visit_tab['redcount'][visit] >= 2):
@@ -381,17 +389,22 @@ def temporal_change(comb_tab,visit_tab):
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['2vlsty1'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
-                    mjd_dict['2vlsty2'].append(lst)
+                    mjd_dict['2vlsty2'].append(lst)                
+                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                    mjd_dict['2vlsty3'].append(lst)                
                 else:
-                    mjd_dict['2vlsty3'].append(lst)
+                    mjd_dict['2vlsty4'].append(lst)
             else:
                 mjd_dict['lstno2v'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['lsty1no2v'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
+                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                    mjd_dict['lsty3no2v'].append(lst)       
                 else:
-                    mjd_dict['lsty3no2v'].append(lst)
+                    mjd_dict['lsty4no2v'].append(lst)
+                    
         elif(visit_tab['qlcount'][visit] >= 2):
             if(visit_tab['qlcount'][visit] == 2):
                 mjd_dict['2vlst'].append(lst)
@@ -399,16 +412,20 @@ def temporal_change(comb_tab,visit_tab):
                     mjd_dict['2vlsty1'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['2vlsty2'].append(lst)
+                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                    mjd_dict['2vlsty3'].append(lst)       
                 else:
-                    mjd_dict['2vlsty3'].append(lst)
+                    mjd_dict['2vlsty4'].append(lst)
             else:
                 mjd_dict['lstno2v'].append(lst)
                 if (visit_tab['mjd'][visit] < 57210):
                     mjd_dict['lsty1no2v'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
+                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                    mjd_dict['lsty3no2v'].append(lst)       
                 else:
-                    mjd_dict['lsty3no2v'].append(lst)
+                    mjd_dict['lsty4no2v'].append(lst)
         
                 
     output_tab = Table()
@@ -429,7 +446,7 @@ def temporal_change(comb_tab,visit_tab):
     output_tab.write('../visit_lst.csv',format='ascii',overwrite=True)
     return (output_tab,mjd_dict)
 
-def lst_plots(mjd_dict,startmjd,endmjd):
+def lst_plots_north(mjd_dict,startmjd,endmjd):
     
     #Read planned file
     plan_tab = read_planned()
@@ -453,7 +470,8 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Actual'))
+    pl.plot(plan_tab['mid'],plan_tab['visits']*4.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Plan Year4','Actual'))
     pp.savefig()
     pl.clf()
     
@@ -461,19 +479,21 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     (yrhst1,yrbins1) = np.histogram(mjd_dict['lsty1'],bins=24,range=(0,24))
     (yrhst2,yrbins2) = np.histogram(mjd_dict['lsty2'],bins=24,range=(0,24))
     (yrhst3,yrbins3) = np.histogram(mjd_dict['lsty3'],bins=24,range=(0,24))
+    (yrhst4,yrbins4) = np.histogram(mjd_dict['lsty4'],bins=24,range=(0,24))
     (yrhst1_no,yrbins1) = np.histogram(mjd_dict['lsty1no2v'],bins=24,range=(0,24))
     (yrhst2_no,yrbins2) = np.histogram(mjd_dict['lsty2no2v'],bins=24,range=(0,24))
     (yrhst3_no,yrbins3) = np.histogram(mjd_dict['lsty3no2v'],bins=24,range=(0,24))
+    (yrhst4_no,yrbins4) = np.histogram(mjd_dict['lsty4no2v'],bins=24,range=(0,24))
     #Write the data out
     lstout = open('../lstdist.txt','w')
-    lstout.write("#LST Proj_visit Yr1_Visit Yr2_Visit Yr3_Visit Yr1_no2exp Yr2_no2exp Yr3_visit_no2exp\n")
+    lstout.write("#LST Proj_visit Yr1_Visit Yr2_Visit Yr3_Visit Yr4_Visit Yr1_no2exp Yr2_no2exp Yr3_visit_no2exp Yr4_visit_no2exp\n")
     for i in range(24):
         lstout.write("{} {} {} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
-                                                  yrhst2[i],yrhst3[i],yrhst1_no[i],yrhst2_no[i],yrhst3_no[i]))
+                                                  yrhst2[i],yrhst3[i],yrhst4[i],yrhst1_no[i],yrhst2_no[i],yrhst3_no[i],yrhst4_no[i]))
     lstout.close()
     
-    pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2'],mjd_dict['lsty3']],bins=24,range=(0,24),
-            stacked=True,color=["pink","#58ACFA",'lightgreen'],rwidth=1.0,edgecolor='black')
+    pl.hist([mjd_dict['lsty1'],mjd_dict['lsty2'],mjd_dict['lsty3'],mjd_dict['lsty4']],bins=24,range=(0,24),
+            stacked=True,color=["pink","#58ACFA",'lightgreen','lightyellow'],rwidth=1.0,edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -482,14 +502,15 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Actual Year1', 'Actual Year2','Actual Year3'),
+    pl.plot(plan_tab['mid'],plan_tab['visits']*4.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Plan Year4','Actual Year1', 'Actual Year2','Actual Year3','Actual Year4'),
               ncol=2, fontsize='small')
     pp.savefig()
     pl.clf()
     
     #LST 1 hour visit by year - 2exp visits
-    pl.hist([mjd_dict['lsty1no2v'],mjd_dict['lsty2no2v'],mjd_dict['lsty3no2v']],bins=24,range=(0,24),
-            stacked=True,color=["pink","#58ACFA",'lightgreen'],rwidth=1.0,edgecolor='black')
+    pl.hist([mjd_dict['lsty1no2v'],mjd_dict['lsty2no2v'],mjd_dict['lsty3no2v'],mjd_dict['lsty4no2v']],bins=24,range=(0,24),
+            stacked=True,color=["pink","#58ACFA",'lightgreen','lightyellow'],rwidth=1.0,edgecolor='black')
     pl.xlabel("LST")
     pl.ylabel("Number of visits - 2 expsure visits")
     pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
@@ -498,8 +519,9 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.plot(plan_tab['mid'],plan_tab['visits'],color="r",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="b",linewidth=2.0)
     pl.plot(plan_tab['mid'],plan_tab['visits']*3.0,color="g",linewidth=2.0)
-    pl.legend(('Plan Year1','Plan Year2','Plan Year3,','Actual Year1', 'Actual Year2', 'Actual Year3'),
-              fontsize='small')
+    pl.plot(plan_tab['mid'],plan_tab['visits']*4.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year1','Plan Year2','Plan Year3','Plan Year4','Actual Year1', 'Actual Year2', 'Actual Year3','Actual Year4'),
+              ncol=2,fontsize='small')
     pp.savefig()
     pl.clf()
     
@@ -510,7 +532,7 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.title("Current ({}) Number of Visits by LST (20 min bins)".format(date))
     #pl.xlim(-1,24)
     #pl.savefig('lst_visit.png',dpi=400)
-#    pp.savefig()
+    #pp.savefig()
     pl.clf()
     cbins = m.ceil(mjddiff/15.0)
     pl.hist(mjd_dict['mjd'],bins=int(cbins),range=(startmjd,endmjd),color="#58ACFA",edgecolor='black')
@@ -528,9 +550,11 @@ def lst_plots(mjd_dict,startmjd,endmjd):
     pl.xlim(56820,56820+((cbins+15)*5.0))
     #pp.savefig()
     pl.clf()
-    
-    
     pp.close()
+
+def lst_plots_south(mjd_dict,startmjd,endmjd):  
+    pass
+    
 
 # -------------
 # Main Function
@@ -564,7 +588,10 @@ def current_visits_main(south=False):
     endmjd = smjd_list[-1] + 1
     mjddiff = endmjd - startmjd
     
-    lst_plots(mjd_dict, startmjd, endmjd)
+    if(south):
+        lst_plots_south(mjd_dict,startmjd,endmjd)
+    else:
+        lst_plots_north(mjd_dict, startmjd, endmjd)
     
     #Get visits per day
     (mjd_num,mjd_bin)=np.histogram(mjd_dict['mjd'],range=(startmjd,endmjd),bins=mjddiff)
@@ -684,7 +711,9 @@ def current_visits_main(south=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
-    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    group.add_argument('-n','--north', action = 'store_true',help='Run this with the Northern options')
     args = vars(parser.parse_args())
     ret = current_visits_main(south=args['south'])
     sys.exit(ret)

@@ -84,9 +84,12 @@ def read_master(south=False):
     print("Read MasterTable Read Done")
     return(mytable)
 
-def read_weather():
+def read_weather(south=False):
     #Create Table
-    mytable = Table.read('../weather.txt',format='ascii')
+    if(south):
+        mytable = Table.read('../weather_south.txt',format='ascii')
+    else:
+        mytable = Table.read('../weather_north.txt',format='ascii')
     print("Read Weather Table Read Done")
     return(mytable)
 
@@ -449,8 +452,10 @@ def data_plots_main(south=False):
     print("Complete!")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Creates files and plots for tracking APOGEE Progress.')
-    parser.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    parser = argparse.ArgumentParser(description='Creates Additional files and plots for tracking APOGEE Progress.')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-s','--south', action = 'store_true',help='Run this with the Southern options')
+    group.add_argument('-n','--north', action = 'store_true',help='Run this with the Northern options')
     args = vars(parser.parse_args())
     data_plots_main(args['south'])
     
