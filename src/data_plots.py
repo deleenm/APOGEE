@@ -422,7 +422,7 @@ def weather_plot(pp,south=False):
     pl.xlabel('MJD')
     pl.ylabel("Percent Good Weather")
     if(south):
-        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=3)
+        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=2)
     else:
         pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
     pp.savefig()
@@ -439,7 +439,7 @@ def weather_plot(pp,south=False):
     pl.title('Percent Good Weather')
     pl.ylabel("Percent Good Weather")
     if(south):
-        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=3)
+        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=2)
     else:
         pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
     pp.savefig()
