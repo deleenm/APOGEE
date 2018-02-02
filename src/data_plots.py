@@ -403,8 +403,13 @@ def weather_plot(pp,south=False):
     wdate = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in wtab['Date']]
     wmjd = Time(wdate,format='datetime')
     
+    if(south):
+        proj_good=70
+    else:
+        proj_good=45
+    
     med_good = np.median(wtab['per_good'])
-    print("Median Percent Good Weather: {}%".format(med_good))
+    print("Median Percent Good Weather: {}% Expected {}%".format(np.round(med_good,2),proj_good))
     
     pl.plot(wmjd.mjd,wtab['per_good'],linewidth=2.0)
     
