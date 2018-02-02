@@ -208,7 +208,7 @@ def apogee_proj(pp,south=False):
     if(south):
         projtab = master_proj(endmjd=endmjd,south=south,pergood=.70)
     else:
-        projtab = master_proj(endmjd=endmjd,south=south)
+        projtab = master_proj(endmjd=endmjd)
     
     print("Total Visits: {}".format(mjdtab['cum'][-1]))
     print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
@@ -395,8 +395,8 @@ def apogee_type(pp,south=False):
     pp.savefig(bbox_extra_artists=(lgd,), bbox_inches='tight')
     pl.clf()
 
-def weather_plot(pp):
-    wtab = read_weather()
+def weather_plot(pp,south=False):
+    wtab = read_weather(south=south)
     
     #Let's look at weather
     #https://trac.sdss.org/wiki/APO/Observatory/ObserverForum/SDSSOperationTimeTracking    
@@ -408,23 +408,35 @@ def weather_plot(pp):
     
     pl.plot(wmjd.mjd,wtab['per_good'],linewidth=2.0)
     
-    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
+    if(south):
+        pl.axhline(70,color='k',linestyle='--',linewidth=2.0)
+    else:
+        pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
     pl.axhline(med_good,color='r',linestyle='--',linewidth=2.0)
     pl.title('Percent Good Weather')
     pl.xlabel('MJD')
     pl.ylabel("Percent Good Weather")
-    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
+    if(south):
+        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=3)
+    else:
+        pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
     pp.savefig()
     pl.clf()
 
 
     pl.plot(wdate,wtab['per_good'],linewidth=2.0)
-    pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
+    if(south):
+        pl.axhline(70,color='k',linestyle='--',linewidth=2.0)
+    else:
+        pl.axhline(45,color='k',linestyle='--',linewidth=2.0)
     pl.axhline(med_good,color='r',linestyle='--',linewidth=2.0)
     pl.gcf().autofmt_xdate()
     pl.title('Percent Good Weather')
     pl.ylabel("Percent Good Weather")
-    pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
+    if(south):
+        pl.legend(('Data', '70% Good Weather', 'Median Weather'),loc=3)
+    else:
+        pl.legend(('Data', '45% Good Weather', 'Median Weather'),loc=2)
     pp.savefig()
     pl.clf()
     
@@ -447,7 +459,7 @@ def data_plots_main(south=False):
     apogee_type(pp)
     #apogee_sn2(pp,south=south)
     standard_plot(pp,south=south)
-    weather_plot(pp)
+    weather_plot(pp,south=south)
     pp.close()
     print("Complete!")
 

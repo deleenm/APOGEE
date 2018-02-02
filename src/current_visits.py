@@ -488,7 +488,7 @@ def lst_plots_north(mjd_dict,startmjd,endmjd):
     lstout = open('../lstdist.txt','w')
     lstout.write("#LST Proj_visit Yr1_Visit Yr2_Visit Yr3_Visit Yr4_Visit Yr1_no2exp Yr2_no2exp Yr3_visit_no2exp Yr4_visit_no2exp\n")
     for i in range(24):
-        lstout.write("{} {} {} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
+        lstout.write("{} {} {} {} {} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst1[i],
                                                   yrhst2[i],yrhst3[i],yrhst4[i],yrhst1_no[i],yrhst2_no[i],yrhst3_no[i],yrhst4_no[i]))
     lstout.close()
     
@@ -553,7 +553,74 @@ def lst_plots_north(mjd_dict,startmjd,endmjd):
     pp.close()
 
 def lst_plots_south(mjd_dict,startmjd,endmjd):  
-    pass
+        
+    #Read planned file
+    plan_tab = read_planned()
+    
+    mjddiff = endmjd - startmjd
+    
+    #Get date from final MJD converted to SJD
+    jddate = Time(endmjd-2,format='mjd')
+    date = (jddate.datetime).strftime('%m/%d/%y')
+       
+    #Make Plot
+    pp = PdfPages('../visit_lst.pdf')
+    
+    #LST 1 hour visit
+    pl.hist(mjd_dict['lst'],bins=24,range=(0,24),color="#58ACFA",edgecolor='black')
+    pl.xlabel("LST")
+    pl.ylabel("Number of visits")
+    pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
+    pl.plot(plan_tab['mid'],plan_tab['visits'],color="g",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year3','Plan Year4','Actual'))
+    pp.savefig()
+    pl.clf()
+    
+    #LST 1 hour visit by year
+    (yrhst3,yrbins3) = np.histogram(mjd_dict['lsty3'],bins=24,range=(0,24))
+    (yrhst4,yrbins4) = np.histogram(mjd_dict['lsty4'],bins=24,range=(0,24))
+    (yrhst3_no,yrbins3) = np.histogram(mjd_dict['lsty3no2v'],bins=24,range=(0,24))
+    (yrhst4_no,yrbins4) = np.histogram(mjd_dict['lsty4no2v'],bins=24,range=(0,24))
+    
+    #Write the data out
+    lstout = open('../lstdist.txt','w')
+    lstout.write("#LST Proj_visit Yr3_Visit Yr4_Visit Yr3_visit_no2exp Yr4_visit_no2exp\n")
+    for i in range(24):
+        lstout.write("{} {} {} {} {} {}\n".format(plan_tab['mid'][i],plan_tab['visits'][i],yrhst3[i],
+                                                        yrhst4[i],yrhst3_no[i],yrhst4_no[i]))
+    lstout.close()
+    
+    pl.hist([mjd_dict['lsty3'],mjd_dict['lsty4']],bins=24,range=(0,24),
+            stacked=True,color=['lightgreen','lightyellow'],rwidth=1.0,edgecolor='black')
+    pl.xlabel("LST")
+    pl.ylabel("Number of visits")
+    pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
+    #pl.xlim(-1,24)
+    #pl.savefig('lst_visit.png',dpi=400)
+    pl.plot(plan_tab['mid'],plan_tab['visits'],color="g",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year3','Plan Year4','Actual Year3','Actual Year4'),
+              ncol=2, fontsize='small')
+    pp.savefig()
+    pl.clf()
+    
+    #LST 1 hour visit by year - 2exp visits
+    pl.hist([mjd_dict['lsty3no2v'],mjd_dict['lsty4no2v']],bins=24,range=(0,24),
+            stacked=True,color=['lightgreen','lightyellow'],rwidth=1.0,edgecolor='black')
+    pl.xlabel("LST")
+    pl.ylabel("Number of visits - 2 expsure visits")
+    pl.title("Current ({}) Number of Visits by LST (1 hour bins)".format(date))
+    #pl.xlim(-1,24)
+    #pl.savefig('lst_visit.png',dpi=400)
+    pl.plot(plan_tab['mid'],plan_tab['visits'],color="g",linewidth=2.0)
+    pl.plot(plan_tab['mid'],plan_tab['visits']*2.0,color="gold",linewidth=2.0)
+    pl.legend(('Plan Year3','Plan Year4','Actual Year3','Actual Year4'),
+              ncol=2,fontsize='small')
+    pp.savefig()
+    pl.clf()
+    
+    pp.close()
     
 
 # -------------
