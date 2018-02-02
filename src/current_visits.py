@@ -291,14 +291,27 @@ def temporal_change(comb_tab,visit_tab,south=False):
     mjd_dict['lsty2'] = list()
     mjd_dict['lsty3'] = list()
     mjd_dict['lsty4'] = list()
-    mjd_dict['anc'] = list()
-    mjd_dict['apok'] = list()
+    
+    #North and South
     mjd_dict['bulge'] = list()
     mjd_dict['clus'] = list()
     mjd_dict['disk'] = list()
-    mjd_dict['halo'] = list()
-    mjd_dict['goal'] = list()
-    mjd_dict['sat'] = list()
+
+    #South Only
+    if(south):
+        mjd_dict['halo_stream'] = list()
+        mjd_dict['halo_dSph'] = list()
+        mjd_dict['magclouds'] = list()
+        mjd_dict['RRL'] = list()
+        mjd_dict['sgr'] = list()
+    else:
+        #North Only
+        mjd_dict['anc'] = list()
+        mjd_dict['apok'] = list()
+        mjd_dict['halo'] = list()
+        mjd_dict['goal'] = list()
+        mjd_dict['sat'] = list()
+    
     mjd_dict['sn2'] = list()
     mjd_dict['loc_id'] = list()
     mjd_dict['cohort'] = list()
@@ -347,23 +360,43 @@ def temporal_change(comb_tab,visit_tab,south=False):
         mjd_dict['2vsn2'].append(twovisit_sn2)
         
         #Determine type
-        if (chold['type'] == 'anc'):
-            mjd_dict['anc'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'kep_apokasc'):
-            mjd_dict['apok'].append(visit_tab['mjd'][visit])    
-        if (chold['type'] == 'bulge' or chold['type'] =='rrlyr'):
-            mjd_dict['bulge'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'cluster_oc' or chold['type'] == 'cluster_gc'):
-            mjd_dict['clus'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'disk' or chold['type'] == 'disk1' or chold['type'] == 'disk2'):
-            mjd_dict['disk'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'halo' or chold['type'] == 'halo_stream'):
-            mjd_dict['halo'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'k2' or chold['type'] == 'kep_koi' or chold['type'] == 'substellar' or chold['type'] == 'yso'):
-            mjd_dict['goal'].append(visit_tab['mjd'][visit])
-        if (chold['type'] == 'halo_dsph'):
-            mjd_dict['sat'].append(visit_tab['mjd'][visit])   
-        
+        if(south):
+            if (chold['type'] == 'bulge'):
+                mjd_dict['bulge'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'disk' or chold['type'] == 'disk1' or chold['type'] == 'disk2'):
+                mjd_dict['disk'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'halo_stream'):
+                mjd_dict['halo_stream'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'halo_dsph'):
+                mjd_dict['halo_dSph'].append(visit_tab['mjd'][visit])   
+            if (chold['type'] == 'magclouds'):
+                mjd_dict['magclouds'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'RRL'):
+                mjd_dict['RRL'].append(visit_tab['mjd'][visit])    
+            if (chold['type'] == 'cluster_oc' or chold['type'] == 'cluster_gc' or chold['type'] == 'cluster_gc1' 
+                or chold['type'] == 'cluster_gc2' or chold['type'] == 'cluster_gc3'):
+                mjd_dict['clus'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'sgr'):
+                mjd_dict['sgr'].append(visit_tab['mjd'][visit])    
+                
+        else:
+            if (chold['type'] == 'anc'):
+                mjd_dict['anc'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'kep_apokasc'):
+                mjd_dict['apok'].append(visit_tab['mjd'][visit])    
+            if (chold['type'] == 'bulge' or chold['type'] =='rrlyr'):
+                mjd_dict['bulge'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'cluster_oc' or chold['type'] == 'cluster_gc'):
+                mjd_dict['clus'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'disk' or chold['type'] == 'disk1' or chold['type'] == 'disk2'):
+                mjd_dict['disk'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'halo' or chold['type'] == 'halo_stream'):
+                mjd_dict['halo'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'k2' or chold['type'] == 'kep_koi' or chold['type'] == 'substellar' or chold['type'] == 'yso'):
+                mjd_dict['goal'].append(visit_tab['mjd'][visit])
+            if (chold['type'] == 'halo_dsph'):
+                mjd_dict['sat'].append(visit_tab['mjd'][visit])
+               
         #Deal with going arcross 360 / 0
         lst = (chold['ra'][0] + chold['ha'][0])
         
@@ -670,26 +703,47 @@ def current_visits_main(south=False):
         lst_plots_north(mjd_dict, startmjd, endmjd)
     
     #Get visits per day
-    (mjd_num,mjd_bin)=np.histogram(mjd_dict['mjd'],range=(startmjd,endmjd),bins=mjddiff)
-    (anc_num,anc_bin)=np.histogram(mjd_dict['anc'],range=(startmjd,endmjd),bins=mjddiff)
-    (apok_num,apok_bin)=np.histogram(mjd_dict['apok'],range=(startmjd,endmjd),bins=mjddiff)
-    (bulge_num,bulge_bin)=np.histogram(mjd_dict['bulge'],range=(startmjd,endmjd),bins=mjddiff)
-    (clus_num,clus_bin)=np.histogram(mjd_dict['clus'],range=(startmjd,endmjd),bins=mjddiff)
-    (disk_num,disk_bin)=np.histogram(mjd_dict['disk'],range=(startmjd,endmjd),bins=mjddiff)
-    (halo_num,halo_bin)=np.histogram(mjd_dict['halo'],range=(startmjd,endmjd),bins=mjddiff)
-    (goal_num,goal_bin)=np.histogram(mjd_dict['goal'],range=(startmjd,endmjd),bins=mjddiff)
-    (sat_num,sat_bin)=np.histogram(mjd_dict['sat'],range=(startmjd,endmjd),bins=mjddiff)
+    if(south):
+        (mjd_num,mjd_bin)=np.histogram(mjd_dict['mjd'],range=(startmjd,endmjd),bins=mjddiff)
+        (bulge_num,bulge_bin)=np.histogram(mjd_dict['bulge'],range=(startmjd,endmjd),bins=mjddiff)
+        (clus_num,clus_bin)=np.histogram(mjd_dict['clus'],range=(startmjd,endmjd),bins=mjddiff)
+        (disk_num,disk_bin)=np.histogram(mjd_dict['disk'],range=(startmjd,endmjd),bins=mjddiff)
+        (halo_s_num,halo_s_bin)=np.histogram(mjd_dict['halo_stream'],range=(startmjd,endmjd),bins=mjddiff)
+        (halo_d_num,halo_d_bin)=np.histogram(mjd_dict['halo_dSph'],range=(startmjd,endmjd),bins=mjddiff)
+        (mag_num,mag_bin)=np.histogram(mjd_dict['magclouds'],range=(startmjd,endmjd),bins=mjddiff)
+        (rrl_num,rrl_bin)=np.histogram(mjd_dict['RRL'],range=(startmjd,endmjd),bins=mjddiff)
+        (sgr_num,sgr_bin)=np.histogram(mjd_dict['sgr'],range=(startmjd,endmjd),bins=mjddiff)   
+    else:
+        (mjd_num,mjd_bin)=np.histogram(mjd_dict['mjd'],range=(startmjd,endmjd),bins=mjddiff)
+        (anc_num,anc_bin)=np.histogram(mjd_dict['anc'],range=(startmjd,endmjd),bins=mjddiff)
+        (apok_num,apok_bin)=np.histogram(mjd_dict['apok'],range=(startmjd,endmjd),bins=mjddiff)
+        (bulge_num,bulge_bin)=np.histogram(mjd_dict['bulge'],range=(startmjd,endmjd),bins=mjddiff)
+        (clus_num,clus_bin)=np.histogram(mjd_dict['clus'],range=(startmjd,endmjd),bins=mjddiff)
+        (disk_num,disk_bin)=np.histogram(mjd_dict['disk'],range=(startmjd,endmjd),bins=mjddiff)
+        (halo_num,halo_bin)=np.histogram(mjd_dict['halo'],range=(startmjd,endmjd),bins=mjddiff)
+        (goal_num,goal_bin)=np.histogram(mjd_dict['goal'],range=(startmjd,endmjd),bins=mjddiff)
+        (sat_num,sat_bin)=np.histogram(mjd_dict['sat'],range=(startmjd,endmjd),bins=mjddiff)
     
     mjd_cum = np.cumsum(mjd_num)
     
-    anc_cum = np.cumsum(anc_num)
-    apok_cum = np.cumsum(apok_num)
-    bulge_cum = np.cumsum(bulge_num)
-    clus_cum = np.cumsum(clus_num)
-    disk_cum = np.cumsum(disk_num)
-    halo_cum = np.cumsum(halo_num)
-    goal_cum = np.cumsum(goal_num)
-    sat_cum = np.cumsum(sat_num)
+    if(south):
+        bulge_cum = np.cumsum(bulge_num)
+        clus_cum = np.cumsum(clus_num)
+        disk_cum = np.cumsum(disk_num)
+        halo_s_cum = np.cumsum(halo_s_num)
+        halo_d_cum = np.cumsum(halo_d_num)
+        mag_cum = np.cumsum(mag_num)
+        rrl_cum = np.cumsum(rrl_num)
+        sgr_cum = np.cumsum(sgr_num)
+    else:
+        anc_cum = np.cumsum(anc_num)
+        apok_cum = np.cumsum(apok_num)
+        bulge_cum = np.cumsum(bulge_num)
+        clus_cum = np.cumsum(clus_num)
+        disk_cum = np.cumsum(disk_num)
+        halo_cum = np.cumsum(halo_num)
+        goal_cum = np.cumsum(goal_num)
+        sat_cum = np.cumsum(sat_num)
     
     #Get SN2 per day
     sn2_na = mjd_tab['sn2']
@@ -753,30 +807,41 @@ def current_visits_main(south=False):
             mjd_comp = mjd_comp + lc_comp
             
         dbd_visits.append(mjd_visits)        
-        dbd_sn2.append(round(mjd_sn2 / 3333.0,4))
-        dbd_sn2corr.append(mjd_sn2corr)
-        dbd_complete.append(mjd_comp)
+        dbd_sn2.append(round(mjd_sn2 / 3333.0,2))
+        dbd_sn2corr.append(round(mjd_sn2corr,2))
+        dbd_complete.append(round(mjd_comp,2))
         
-    sn2_cum = np.cumsum(sn2_num)
+    #sn2_cum = np.cumsum(sn2_num)
     twovisitsn2_cum = np.cumsum(twovisitsn2_num)
     
     cum_tab = Table()
     cum_tab['mjd'] = mjd_bin[0:-1]
     cum_tab['daynum'] = mjd_num
     cum_tab['cum'] = mjd_cum
-    cum_tab['anc'] = anc_cum
-    cum_tab['apok'] = apok_cum
-    cum_tab['bulge'] = bulge_cum
-    cum_tab['clus'] = clus_cum
-    cum_tab['disk'] = disk_cum
-    cum_tab['halo'] = halo_cum
-    cum_tab['goal'] = goal_cum
-    cum_tab['sat'] = sat_cum
+    if(south):
+        cum_tab['bulge'] = bulge_cum
+        cum_tab['clus'] = clus_cum
+        cum_tab['disk'] = disk_cum
+        cum_tab['halo_stream'] = halo_s_cum
+        cum_tab['halo_dSph'] = halo_d_cum
+        cum_tab['magclouds'] = mag_cum
+        cum_tab['RRL'] = rrl_cum
+        cum_tab['sgr'] = sgr_cum
+    else:
+        cum_tab['anc'] = anc_cum
+        cum_tab['apok'] = apok_cum
+        cum_tab['bulge'] = bulge_cum
+        cum_tab['clus'] = clus_cum
+        cum_tab['disk'] = disk_cum
+        cum_tab['halo'] = halo_cum
+        cum_tab['goal'] = goal_cum
+        cum_tab['sat'] = sat_cum
+    
     cum_tab['visits'] = dbd_visits
     cum_tab['sn2'] = dbd_sn2
     cum_tab['sn2corr'] = dbd_sn2corr
     cum_tab['complete'] = dbd_complete
-    cum_tab['2vsn2'] = twovisitsn2_cum
+    cum_tab['2vsn2'] = np.round(twovisitsn2_cum,2)
    
     cum_tab.write('../mjd.hist',format='ascii',overwrite=True)
     

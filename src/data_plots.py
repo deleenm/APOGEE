@@ -371,16 +371,31 @@ def standard_plot(pp,south=False):
 def apogee_type(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
     #projtab = read_proj()
-    
-    pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['anc'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['apok'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['bulge'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['clus'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['disk'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['halo'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['goal'],linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['sat'],linewidth=2.0)
+
+    if(south):
+        pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['bulge'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['clus'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['disk'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['halo_stream'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['halo_dSph'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['magclouds'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['RRL'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['sgr'],linewidth=2.0)
+        lgd = pl.legend(('All','Bulge','Cluster','Disk','Halo_Stream','Halo_dSph','Mag Clouds','RRL','SGR')
+              ,loc=2,bbox_to_anchor=(1, 1))
+    else:
+        pl.plot(mjdtab['mjd'],mjdtab['cum'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['anc'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['apok'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['bulge'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['clus'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['disk'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['halo'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['goal'],linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['sat'],linewidth=2.0)
+        lgd = pl.legend(('All','Anc','APOKASC','Bulge','Cluster','Disk','Halo','Goal','Satellite')
+              ,loc=2,bbox_to_anchor=(1, 1))
     
     pl.title('Current({}) APOGEE-2 Visits by Type'.format(date))
     pl.xlabel('MJD')
@@ -389,8 +404,7 @@ def apogee_type(pp,south=False):
     #Creates nicer looking log plot tics
     pl.gca().yaxis.set_major_formatter(ticker.FuncFormatter(lambda y,pos: ('{{:.{:1d}f}}'.format(
                                                         int(np.maximum(-np.log10(y),0)))).format(y)))
-    lgd = pl.legend(('All','Anc','APOKASC','Bulge','Cluster','Disk','Halo','Goal','Satellite')
-              ,loc=2,bbox_to_anchor=(1, 1))
+
     pl.savefig('test.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
     pp.savefig(bbox_extra_artists=(lgd,), bbox_inches='tight')
     pl.clf()
@@ -461,7 +475,7 @@ def data_plots_main(south=False):
     #pp = PdfPages('progress.pdf')
     #combined_plot(pp) #Not up to date.
     apogee_proj(pp,south=south)
-    apogee_type(pp)
+    apogee_type(pp,south=south)
     #apogee_sn2(pp,south=south)
     standard_plot(pp,south=south)
     weather_plot(pp,south=south)
