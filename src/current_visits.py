@@ -280,7 +280,7 @@ def current_planned(plate_tab,visit_tab,design_tab,south=False):
     
     return(output_tab)       
 
-def temporal_change(comb_tab,visit_tab):
+def temporal_change(comb_tab,visit_tab,south=False):
     
     mjd_dict = dict()
     
@@ -372,12 +372,21 @@ def temporal_change(comb_tab,visit_tab):
         
         lst = round(lst,4)
         
+        #Years are defined Summer to Summer in the North and Jan-Dec in the South
+        if(south):
+            yr3_beg = 57755
+            yr4_beg = 58120
+            
+        else:
+            yr3_beg = 57581
+            yr4_beg = 57945
+        
         mjd_dict['lst'].append(lst)
         if (visit_tab['mjd'][visit] < 57210):
             mjd_dict['lsty1'].append(lst)
         elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
             mjd_dict['lsty2'].append(lst)
-        elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+        elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['lsty3'].append(lst)                
         else:
             mjd_dict['lsty4'].append(lst)
@@ -390,7 +399,7 @@ def temporal_change(comb_tab,visit_tab):
                     mjd_dict['2vlsty1'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['2vlsty2'].append(lst)                
-                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['2vlsty3'].append(lst)                
                 else:
                     mjd_dict['2vlsty4'].append(lst)
@@ -400,7 +409,7 @@ def temporal_change(comb_tab,visit_tab):
                     mjd_dict['lsty1no2v'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
-                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['lsty3no2v'].append(lst)       
                 else:
                     mjd_dict['lsty4no2v'].append(lst)
@@ -412,7 +421,7 @@ def temporal_change(comb_tab,visit_tab):
                     mjd_dict['2vlsty1'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['2vlsty2'].append(lst)
-                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['2vlsty3'].append(lst)       
                 else:
                     mjd_dict['2vlsty4'].append(lst)
@@ -422,7 +431,7 @@ def temporal_change(comb_tab,visit_tab):
                     mjd_dict['lsty1no2v'].append(lst)
                 elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
                     mjd_dict['lsty2no2v'].append(lst)
-                elif (visit_tab['mjd'][visit] >= 57581 and visit_tab['mjd'][visit] < 57945):
+                elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['lsty3no2v'].append(lst)       
                 else:
                     mjd_dict['lsty4no2v'].append(lst)
@@ -643,7 +652,7 @@ def current_visits_main(south=False):
     
     comb_tab = current_planned(plate_tab,visit_tab,design_tab,south=south)
     
-    (mjd_tab,mjd_dict) = temporal_change(comb_tab,visit_tab)
+    (mjd_tab,mjd_dict) = temporal_change(comb_tab,visit_tab,south=south)
     
     #Get the most recent data
     smjd_list = sorted(mjd_dict['mjd'])
