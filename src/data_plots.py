@@ -239,7 +239,7 @@ def apogee_sn2(pp,south=False):
     print("Total SN2 Visits: {}".format(round(mjdtab['sn2'][-1])))
     print("Total SN2corr Visits: {}".format(round(mjdtab['sn2corr'][-1])))
     print("Total Complete: {}".format(round(mjdtab['complete'][-1])))
-    print("Total Short Vistis: {}".format(round(mjdtab['2vsn2'][-1])))
+    print("Total Short Visits: {}".format(round(mjdtab['2vsn2'][-1])))
     print("Total Projected Visits: {}".format(round(projtab['apvisits_cum'][-1])))
     if(not south):
         print("Total Projected with Eng Visits: {}".format(round(mprojtab['apvisits_cum'][-1])))
@@ -268,18 +268,19 @@ def apogee_sn2(pp,south=False):
     #Compare SN2corr and Plate Complete to Visits
     pl.plot(mjdtab['mjd'],mjdtab['cum'] - mjdtab['sn2corr'],color='r',linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['cum'] - mjdtab['complete'],color='c',linewidth=2.0)
-    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    if(not south):
+        pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
     pl.title('Difference from Current({}) APOGEE-2 Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits - Corrected Visits")
     pl.legend(('SN2corr Visits','Plate Complete',"Twilight Obs Begin"),loc=2)
-    pl.savefig('test.png')
     pp.savefig()
     pl.clf()
 
     pl.subplot(211)
     pl.plot(mjdtab['mjd'],mjdtab['2vsn2'],color='k',linewidth=2.0)
-    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    if(not south):
+        pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
     pl.title('Current({}) APOGEE-2 2-Exposure Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits")
@@ -289,10 +290,10 @@ def apogee_sn2(pp,south=False):
     #Prevent divide by zero
     ratio = mjdtab['2vsn2'][(mjdtab['sn2'] != 0)]/mjdtab['sn2'][(mjdtab['sn2'] != 0)]
     pl.plot(mjdtab['mjd'][(mjdtab['sn2'] != 0)],ratio*100,color='k',linewidth=2.0)
-    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    if(not south):
+        pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
     pl.xlabel('MJD')
     pl.ylabel("Percent of SN2 Visits")
-    pl.savefig('test.png')
     pp.savefig()
     pl.clf()
     
@@ -300,38 +301,40 @@ def apogee_sn2(pp,south=False):
     pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['sn2corr']-mjdtab['2vsn2'],color='r',linewidth=2.0)
     pl.plot(mjdtab['mjd'],mjdtab['complete']-mjdtab['2vsn2'],color='c',linewidth=2.0)
-    pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
-    pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
-    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+    if(not south):
+        pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
+        pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
+        pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
     
     pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
     pl.xlabel('MJD')
     pl.ylabel("Number of Visits - 2 Exp. Vists")
     #pl.xlim(57400,57550)
     #pl.ylim(ymin=600)
-    pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)', 
-               'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)
-    pl.savefig('test.png')
+    if(not south):
+        pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)', 
+                   'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)
+    else:
+        pl.legend(('Visits','SN2corr Visits','Plate Complete'),loc=2)
+    
     pp.savefig()
     pl.clf()
-    
-    pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['sn2corr']-mjdtab['2vsn2'],color='r',linewidth=2.0)
-    pl.plot(mjdtab['mjd'],mjdtab['complete']-mjdtab['2vsn2'],color='c',linewidth=2.0)
-    pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
-    pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
-    pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
-    pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
-    pl.xlabel('MJD')
-    pl.ylabel("Number of Visits - 2 Exp. Vists")
-    pl.xlim(57400,57550)
-    pl.ylim(ymin=600)
-    pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)',
-                'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)  
-    
-    pl.savefig('test.png')
-    pp.savefig()
-    pl.clf()
+    if(not south):
+        pl.plot(mjdtab['mjd'],mjdtab['cum']-mjdtab['2vsn2'],color='b',linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['sn2corr']-mjdtab['2vsn2'],color='r',linewidth=2.0)
+        pl.plot(mjdtab['mjd'],mjdtab['complete']-mjdtab['2vsn2'],color='c',linewidth=2.0)
+        pl.plot(projtab['mjd'],gprojtab['apvisits_cum'],'--',color='m',linewidth=2.0)
+        pl.plot(projtab['mjd'],gmprojtab['apvisits_cum'],'--',color='y',linewidth=2.0)
+        pl.axvline(57482,color='k',linestyle='--',linewidth=2.0)
+        pl.title('Current({}) and Projected APOGEE-2 Visits'.format(date))
+        pl.xlabel('MJD')
+        pl.ylabel("Number of Visits - 2 Exp. Vists")
+        pl.xlim(57400,57550)
+        pl.ylim(ymin=600)
+        pl.legend(('Visits','SN2corr Visits','Plate Complete','Projected (50%)',
+                   'Projected with Eng (50%)','Twilight Obs Begin'),loc=2)  
+        pp.savefig()
+        pl.clf()
 
 def standard_plot(pp,south=False):
     (mjdtab,date,endmjd) = read_mjd()
@@ -409,6 +412,63 @@ def apogee_type(pp,south=False):
     pp.savefig(bbox_extra_artists=(lgd,), bbox_inches='tight')
     pl.clf()
 
+def yearly_average(pp,south=False):
+    (mjdtab,date,endmjd) = read_mjd()
+                
+    #Define beginnings
+    yr2_beg = 57210
+        
+    if(south):
+        yr3_beg = 57755
+        yr4_beg = 58120
+            
+    else:
+        yr3_beg = 57581
+        yr4_beg = 57945
+    
+
+    if(south):
+        y1proj = 0.0
+        y2proj = 0.0
+        y3proj = float(master_proj(endmjd=yr4_beg-1,south=south,pergood=.70)['apvisits_cum'][-1])
+        y4proj = float(master_proj(endmjd=endmjd,south=south,pergood=.70)['apvisits_cum'][-1])
+        y3oldproj = 1.0 #Placeholder
+        y4oldproj = 1.0 #Placeholder
+    else:
+        y1proj = float(master_proj(endmjd=yr2_beg-1)['apvisits_cum'][-1])
+        y2proj = float(master_proj(endmjd=yr3_beg-1)['apvisits_cum'][-1])
+        y3proj = float(master_proj(endmjd=yr4_beg-1)['apvisits_cum'][-1])
+        y4proj = float(master_proj(endmjd=endmjd)['apvisits_cum'][-1])
+        y1oldproj = 407.5
+        y2oldproj = 407.5*2
+        y3oldproj = 407.5*3
+        y4oldproj = 407.5*(3+(endmjd-yr4_beg)/365.25) 
+        
+    
+    #Actual numbers:
+    if not south:
+        y1visit = float(mjdtab['cum'][(mjdtab['mjd'] == yr2_beg)])
+        y1comp = float(mjdtab['complete'][(mjdtab['mjd'] == yr2_beg)])
+        y2visit = float(mjdtab['cum'][(mjdtab['mjd'] == yr3_beg)])
+        y2comp = float(mjdtab['complete'][(mjdtab['mjd'] == yr3_beg)])
+        
+    y3visit = float(mjdtab['cum'][(mjdtab['mjd'] == yr4_beg)])
+    y3comp = float(mjdtab['complete'][(mjdtab['mjd'] == yr4_beg)])
+    y4visit = float(mjdtab['cum'][(mjdtab['mjd'] == endmjd)])
+    y4comp = float(mjdtab['complete'][(mjdtab['mjd'] == endmjd)])
+    
+    if not south:
+        print("Year 1 Projected: {:6.1f} old: {:6.1f} Visits: {:5.0f} {:5.1%} {:5.1%} Complete: {:.1f} {:.1%} {:.1%}".format(y1proj,y1oldproj,y1visit
+                                                                ,y1visit/y1proj-1,y1visit/y1oldproj-1, y1comp,y1comp/y1proj-1,y1comp/y1oldproj-1))
+        print("Year 2 Projected: {:6.1f} old: {:6.1f} Visits: {:5.0f} {:.1%} {:5.1%} Complete: {:.1f} {:.1%} {:.1%}".format(y2proj,y2oldproj,y2visit
+                                                                ,y2visit/y2proj-1,y2visit/y2oldproj-1, y2comp,y2comp/y2proj-1,y2comp/y2oldproj-1))
+    
+    print("Year 3 Projected: {:6.1f} old: {:6.1f} Visits: {:5.0f} {:5.1%} {:5.1%} Complete: {:.1f} {:.1%} {:.1%}".format(y3proj,y3oldproj,y3visit
+                                                                ,y3visit/y3proj-1,y3visit/y3oldproj-1, y3comp,y3comp/y3proj-1,y3comp/y3oldproj-1))
+    print("Year 4 Projected: {:6.1f} old: {:6.1f} Visits: {:5.0f} {:5.1%} {:5.1%} Complete: {:.1f} {:.1%} {:.1%}".format(y4proj,y4oldproj,y4visit
+                                                                ,y4visit/y4proj-1,y4visit/y4oldproj-1, y4comp,y4comp/y4proj-1,y4comp/y4oldproj-1))
+
+
 def weather_plot(pp,south=False):
     wtab = read_weather(south=south)
     
@@ -476,9 +536,10 @@ def data_plots_main(south=False):
     #combined_plot(pp) #Not up to date.
     apogee_proj(pp,south=south)
     apogee_type(pp,south=south)
-    #apogee_sn2(pp,south=south)
+    apogee_sn2(pp,south=south)
     standard_plot(pp,south=south)
     weather_plot(pp,south=south)
+    yearly_average(pp,south=south)
     pp.close()
     print("Complete!")
 

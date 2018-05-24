@@ -406,6 +406,8 @@ def temporal_change(comb_tab,visit_tab,south=False):
         lst = round(lst,4)
         
         #Years are defined Summer to Summer in the North and Jan-Dec in the South
+        yr2_beg = 57210
+        
         if(south):
             yr3_beg = 57755
             yr4_beg = 58120
@@ -415,9 +417,9 @@ def temporal_change(comb_tab,visit_tab,south=False):
             yr4_beg = 57945
         
         mjd_dict['lst'].append(lst)
-        if (visit_tab['mjd'][visit] < 57210):
+        if (visit_tab['mjd'][visit] < yr2_beg):
             mjd_dict['lsty1'].append(lst)
-        elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
+        elif (visit_tab['mjd'][visit] >= yr2_beg and visit_tab['mjd'][visit] < yr3_beg):
             mjd_dict['lsty2'].append(lst)
         elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['lsty3'].append(lst)                
@@ -428,9 +430,9 @@ def temporal_change(comb_tab,visit_tab,south=False):
         if(visit_tab['redcount'][visit] >= 2):
             if(visit_tab['redcount'][visit] == 2):
                 mjd_dict['2vlst'].append(lst)
-                if (visit_tab['mjd'][visit] < 57210):
+                if (visit_tab['mjd'][visit] < yr2_beg):
                     mjd_dict['2vlsty1'].append(lst)
-                elif (visit_tab['mjd'][visit] >= 57210 and visit_tab['mjd'][visit] < 57581):
+                elif (visit_tab['mjd'][visit] >= yr2_beg and visit_tab['mjd'][visit] < yr3_beg):
                     mjd_dict['2vlsty2'].append(lst)                
                 elif (visit_tab['mjd'][visit] >= yr3_beg and visit_tab['mjd'][visit] < yr4_beg):
                     mjd_dict['2vlsty3'].append(lst)                
